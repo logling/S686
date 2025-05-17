@@ -2,6 +2,7 @@
 {
     static void Main()
     {
+        // just testing smth
         PuzzleGenerator p = new PuzzleGenerator();
         List<List<int>> partitions = p.GetAllPartitions(4);
 
@@ -9,6 +10,7 @@
         List<int> partition = partitions[0];
     }
 
+    // don't mind these
     private void printGrid(Board board)
     {
         Console.WriteLine("printing grid...");

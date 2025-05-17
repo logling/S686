@@ -1,19 +1,20 @@
 public class Board
 {
-    public int Size;
-    public int N;
-    public Piece?[,] Grid;
-    public List<Move> moveSet;
+    public int Size; // length of board. 4*4 or 6*6 board?
+    public int N; // total number of pieces
+    public Piece?[,] Grid; // pieces on board
+
 
     public Board(int inputPieceNum)
     {
-        if (inputPieceNum < 9)
+        N = inputPieceNum;
+
+        if (inputPieceNum < 9) // board size is either 4*4 or 6*6
             Size = 4;
         else
-            Size = 6;
+            Size = 6; 
+
         Grid = new Piece?[Size, Size];
-        N = inputPieceNum;
-        moveSet = new List<Move>();
     }
 
     public void RegisterPiece(Piece piece)
@@ -43,7 +44,7 @@ public class Board
         return x >= 0 && x < Size && y >= 0 && y < Size;
     }
 
-    public int CountPieces()
+    public int CountPieces() // count current number of pieces on board
     {
         int count = 0;
         foreach (var piece in Grid)
@@ -54,7 +55,7 @@ public class Board
         return count;
     }
 
-    public int CountPiece(string inputPieceType)
+    public int CountPiece(string inputPieceType) // count specific type of piece
     {
         int count = 0;
         foreach (var piece in Grid)
@@ -82,7 +83,7 @@ public class Board
         }
         return newBoard;
     }
-
+    
     public Piece GetLastPiece()
     {
         Piece piece = new Piece("dummy",-1,-1);
@@ -103,15 +104,15 @@ public class Board
 
     public void ExecuteMove(Move move) // works when target either exists or not
     {
-        Piece piece = Grid[move.i.x,move.i.y]!;
-        RemovePiece(move.i.x,move.i.y);
-        RemovePiece(move.f.x,move.f.y);
+        Piece piece = Grid[move.i.x, move.i.y]!;
+        RemovePiece(move.i.x, move.i.y);
+        RemovePiece(move.f.x, move.f.y);
         piece.x = move.f.x;
         piece.y = move.f.y;
         RegisterPiece(piece);
     }
 
-    public List<Move> GetValidMoves(Piece piece, bool backwards = false)
+    public List<Move> GetValidMoves(Piece piece, bool backwards = false) // get valid moves of a piece on board.
     {
         List<Move> moves = new List<Move>();
 
@@ -242,7 +243,7 @@ public class Board
         return moves;
     }
 
-    public List<Move> GetAllValidMoves()
+    public List<Move> GetAllValidMoves() // GetValidMoves() for all pieces on board
     {
         var allMoves = new List<Move>();
 

@@ -3,7 +3,7 @@ public class PuzzleGenerator
     Random rand = new Random();
     //
     // partition
-    public List<List<int>> GetAllPartitions(int n)
+    public List<List<int>> GetAllPartitions(int n) // n is target of integer partition
     {
         List<List<int>> result = new List<List<int>>();
         PartitionRecursion(n, n, new List<int>(), result);
@@ -13,7 +13,7 @@ public class PuzzleGenerator
     }
 
     private void PartitionRecursion(int n, int max, List<int> current, List<List<int>> result)
-    {
+    { // n is target number, max is needed later, current is precursor of result
         if (n == 0)
         {
             result.Add(new List<int>(current));
@@ -48,7 +48,7 @@ public class PuzzleGenerator
     {
         Random rand = new Random();
 
-        for (int i = inputList.Count - 1; i > 0; i--)
+        for (int i = inputList.Count - 1; i > 0; i--) // Fisher-Yates shuffle
         {
             int k = rand.Next(i + 1);
             T value = inputList[k];
@@ -59,19 +59,19 @@ public class PuzzleGenerator
 
     //
     // path
-    private void FirstLoop()
+    private void FirstLoop() // generates frogs. second loop generates lily pads
     {
 
     }
 
-    private Piece TakeRandomPiece(List<Piece> pieces)
+    private Piece TakeRandomPiece(List<Piece> pieces) // get random piece and remove from list
     {
         Piece piece = pieces[rand.Next(pieces.Count)];
         pieces.Remove(piece);
         return piece;
     }
 
-    private Move TakeRandomMove(List<Move> moves)
+    private Move TakeRandomMove(List<Move> moves) // get random move and remove from list
     {
         Move move = moves[rand.Next(moves.Count)];
         moves.Remove(move);
@@ -205,6 +205,7 @@ public class PuzzleGenerator
 
         return path;
     }
+
     private void pathRecur(Board board, Piece piece, List<Move> path, List<Move> givenMove, int moveCount, int moveN, ref bool killSwitch)
     {
         if (killSwitch) return;
@@ -226,8 +227,8 @@ public class PuzzleGenerator
     // check unique solution
     public (bool isUniqueSolution, List<Move> key) PuzzleSolver(Board board)
     {
-        List<Move> key = new List<Move>();
-        List<Move> moveSet = new List<Move>();
+        List<Move> key = new List<Move>(); // answer moveSet
+        List<Move> moveSet = new List<Move>(); // multiverse board moveSet
         List<Vector2Int> endingPos = new List<Vector2Int>();
         bool killSwitch = false;
 
@@ -243,33 +244,34 @@ public class PuzzleGenerator
 
         if (board.CountPieces() == 1)
         {
-            Piece lastPiece = board.GetLastPiece();
+            Piece lastPiece = board.GetLastPiece(); // need to check ending position
 
-            if (endingPos.Count == 0)
+            if (endingPos.Count == 0) // get first key
             {
                 endingPos.Add(new Vector2Int(lastPiece.x, lastPiece.y));
                 key.AddRange(moveSet);
             }
-            else if (lastPiece.x != endingPos[0].x || lastPiece.y != endingPos[0].y)
+            else if (lastPiece.x != endingPos[0].x || lastPiece.y != endingPos[0].y) // if different ending, killSwitch on
             {
                 endingPos.Add(new Vector2Int(lastPiece.x, lastPiece.y));
                 killSwitch = true;
             }
-            moveSet.Clear();
+            moveSet.Clear(); // reset moveSet
             return;
         }
 
         List<Move> allValidMoves = board.GetAllValidMoves();
-        if (allValidMoves.Count == 0)
+
+        if (allValidMoves.Count == 0) // dead end
             return;
 
-        foreach (Move move in allValidMoves)
+        foreach (Move move in allValidMoves) // try all possible moves
         {
             Board newBoard = board.Clone();
             newBoard.ExecuteMove(move);
             moveSet.Add(move);
             CheckBoardRecursion(newBoard, key, moveSet, endingPos, ref killSwitch);
-            if (moveSet.Count > 0)
+            if (moveSet.Count > 0) // roll back needed for next move
                 moveSet.RemoveAt(moveSet.Count - 1);
         }
     }

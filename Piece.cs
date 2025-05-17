@@ -1,6 +1,6 @@
 public class Piece
 {
-    public string pieceType;
+    public string pieceType; // type like king or pawn or knight
     public int x, y;
 
     public Piece(string type, int inputX, int inputY)
