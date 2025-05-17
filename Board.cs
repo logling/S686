@@ -18,21 +18,21 @@ public class Board
 
     public void RegisterPiece(Piece piece)
     {
-        this.Grid[piece.x, piece.y] = piece;
+        Grid[piece.x, piece.y] = piece;
     }
 
     public void RemovePiece(int x, int y)
     {
-        this.Grid[x, y] = null;
+        Grid[x, y] = null;
     }
 
     public void ClearBoard()
     {
-        for (int i = 0; i < this.Size; i++)
+        for (int i = 0; i < Size; i++)
         {
-            for (int j = 0; j < this.Size; j++)
+            for (int j = 0; j < Size; j++)
             {
-                if (this.Grid[i, j] != null)
+                if (Grid[i, j] != null)
                     RemovePiece(i, j);
             }
         }
@@ -40,13 +40,13 @@ public class Board
 
     public bool IsWithinBounds(int x, int y)
     {
-        return x >= 0 && x < this.Size && y >= 0 && y < this.Size;
+        return x >= 0 && x < Size && y >= 0 && y < Size;
     }
 
     public int CountPieces()
     {
         int count = 0;
-        foreach (var piece in this.Grid)
+        foreach (var piece in Grid)
         {
             if (piece != null)
                 count++;
@@ -54,17 +54,28 @@ public class Board
         return count;
     }
 
+    public int CountPiece(string inputPieceType)
+    {
+        int count = 0;
+        foreach (var piece in Grid)
+        {
+            if (piece != null && piece.pieceType == inputPieceType)
+                count++;
+        }
+        return count;
+    }
+
     public Board Clone()
     {
-        Board newBoard = new Board(this.N);
-        // newBoard.moveSet = new List<Move>(this.moveSet);
-        for (int i = 0; i < this.Size; i++)
+        Board newBoard = new Board(N);
+
+        for (int i = 0; i < Size; i++)
         {
-            for (int j = 0; j < this.Size; j++)
+            for (int j = 0; j < Size; j++)
             {
-                if (this.Grid[i, j] != null)
+                if (Grid[i, j] != null)
                 {
-                    Piece piece = new Piece(this.Grid[i, j]!.pieceType, this.Grid[i, j]!.x, this.Grid[i, j]!.y);
+                    Piece piece = new Piece(Grid[i, j]!.pieceType, Grid[i, j]!.x, Grid[i, j]!.y);
                     newBoard.RegisterPiece(piece);
                 }
             }
@@ -76,13 +87,13 @@ public class Board
     {
         Piece piece = new Piece("dummy",-1,-1);
 
-        for (int i = 0; i < this.Size; i++)
+        for (int i = 0; i < Size; i++)
         {
-            for (int j = 0; j < this.Size; j++)
+            for (int j = 0; j < Size; j++)
             {
-                if (this.Grid[i, j] != null)
+                if (Grid[i, j] != null)
                 {
-                    piece = this.Grid[i, j]!;
+                    piece = Grid[i, j]!;
                     return piece;
                 }
             }
@@ -92,13 +103,12 @@ public class Board
 
     public void ExecuteMove(Move move) // works when target either exists or not
     {
-        Piece piece = this.Grid[move.i.x,move.i.y]!;
+        Piece piece = Grid[move.i.x,move.i.y]!;
         RemovePiece(move.i.x,move.i.y);
         RemovePiece(move.f.x,move.f.y);
         piece.x = move.f.x;
         piece.y = move.f.y;
         RegisterPiece(piece);
-        // moveSet.Add(move);
     }
 
     public List<Move> GetValidMoves(Piece piece, bool backwards = false)

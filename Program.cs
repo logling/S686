@@ -2,7 +2,11 @@
 {
     static void Main()
     {
+        PuzzleGenerator p = new PuzzleGenerator();
+        List<List<int>> partitions = p.GetAllPartitions(4);
 
+        PuzzleGenerator.Shuffle(partitions);
+        List<int> partition = partitions[0];
     }
 
     private void printGrid(Board board)

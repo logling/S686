@@ -4,7 +4,7 @@ public class Move
 
     public Move(Vector2Int inputI, Vector2Int inputF)
     {
-        this.i = inputI;
-        this.f = inputF;
+        i = inputI;
+        f = inputF;
     }
 }

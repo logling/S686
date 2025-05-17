@@ -4,7 +4,7 @@ public struct Vector2Int
 
     public Vector2Int(int inputX, int inputY)
     {
-        this.x = inputX;
-        this.y = inputY;
+        x = inputX;
+        y = inputY;
     }
 }
