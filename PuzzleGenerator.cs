@@ -78,54 +78,62 @@ public class PuzzleGenerator
         return move;
     }
 
-    private string RandomPieceType(Board board, List<string> pieceTypes) // get random pieceType according to pieceNum rules
+    private string RandomPieceType(Board board) // get random pieceType according to pieceNum rules
     {
+        List<string> pieceTypeCandidate = new List<string> { "king","queen","rook","bishop","knight","pawn" };
         string randomPieceType;
 
         if (board.N >= 4 && board.N <= 8)
         {
             while (true)
             {
-                randomPieceType = pieceTypes[rand.Next(pieceTypes.Count)]; // get random pieceType from candidates list
+                randomPieceType = pieceTypeCandidate[rand.Next(pieceTypeCandidate.Count)]; // get random pieceType from candidates list
 
                 if (randomPieceType == "king" || randomPieceType == "queen") // for king and queen, only 1 allowed
-                    pieceTypes.Remove(randomPieceType);
+                    pieceTypeCandidate.Remove(randomPieceType);
+
                 if (board.CountPiece(randomPieceType) < 2) // when less than 2 duplicates, get pieceType
                     return randomPieceType;
                 else
-                    pieceTypes.Remove(randomPieceType);
+                    pieceTypeCandidate.Remove(randomPieceType);
             }
         }
         else if (board.N == 9)
         {
             while (true)
             {
-                randomPieceType = pieceTypes[rand.Next(pieceTypes.Count)]; // get random pieceType from candidates list
+                randomPieceType = pieceTypeCandidate[rand.Next(pieceTypeCandidate.Count)]; // get random pieceType from candidates list
 
-                if (board.CountPieces() == 8 && pieceTypes.Contains("king")) // always 1 king
+                if (board.CountPieces() == 8 && pieceTypeCandidate.Contains("king")) // always 1 king
                     return "king";
-                if (randomPieceType == "king" || randomPieceType == "queen") // for queen, only 1 allowed
-                    pieceTypes.Remove(randomPieceType);
-                if (board.CountPiece(randomPieceType) < 2)
+
+                if (randomPieceType == "king" || randomPieceType == "queen") // for king and queen, only 1 allowed
+                    pieceTypeCandidate.Remove(randomPieceType);
+
+                if (board.CountPiece(randomPieceType) < 2) // when less than 2 duplicates, get pieceType
                     return randomPieceType;
                 else
-                    pieceTypes.Remove(randomPieceType);
+                    pieceTypeCandidate.Remove(randomPieceType);
             }
         }
         else if (board.N == 10) // always 1 king, 1 queen, 2x other pieces
         {
             while (true)
             {
-                randomPieceType = pieceTypes[rand.Next(pieceTypes.Count)]; // get random pieceType from candidates list
+                randomPieceType = pieceTypeCandidate[rand.Next(pieceTypeCandidate.Count)]; // get random pieceType from candidates list
 
-                if (board.CountPieces() == 8 && pieceTypes.Contains("king")) // always 1 king
+                if (board.CountPieces() == 9 && pieceTypeCandidate.Contains("king")) // always 1 king
                     return "king";
-                if (randomPieceType == "king" || randomPieceType == "queen") // for queen, only 1 allowed
-                    pieceTypes.Remove(randomPieceType);
+                if (board.CountPieces() == 9 && pieceTypeCandidate.Contains("queen")) // always 1 queen
+                    return "queen";
+                    
+                if (randomPieceType == "king" || randomPieceType == "queen") // for king and queen, only 1 allowed
+                    pieceTypeCandidate.Remove(randomPieceType);
+
                 if (board.CountPiece(randomPieceType) < 2)
                     return randomPieceType;
                 else
-                    pieceTypes.Remove(randomPieceType);
+                    pieceTypeCandidate.Remove(randomPieceType);
             }
         }
         else // else if (board.N == 11)
@@ -135,10 +143,8 @@ public class PuzzleGenerator
                 randomPieceType = pieceTypes[rand.Next(pieceTypes.Count)]; // get random pieceType from candidates list
 
                 if (randomPieceType == "king") // only 1 king allowed
-                {
-                    pieceTypes.Remove("king");
-                    return "king";
-                }
+                    pieceTypes.Remove(randomPieceType);
+
                 else if (randomPieceType == "queen") // only 2 queen allowed
                 {
                     if (board.CountPiece(randomPieceType) < 2)
@@ -146,6 +152,7 @@ public class PuzzleGenerator
                     else
                         pieceTypes.Remove("queen");
                 }
+
                 else if (randomPieceType == "pawn") // only 5 pawns allowed
                 {
                     if (board.CountPiece(randomPieceType) < 5)
@@ -153,6 +160,7 @@ public class PuzzleGenerator
                     else
                         pieceTypes.Remove("pawn");
                 }
+                
                 else // for other kind, 4 allowed
                 {
                     if (board.CountPiece(randomPieceType) < 4)
