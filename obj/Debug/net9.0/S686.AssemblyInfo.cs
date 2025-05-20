@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("S686")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0c7a401defc04c5197983586132310e43921b9a9")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7814f40aa3023a2674422eb781cdd606b5ceff3d")]
 [assembly: System.Reflection.AssemblyProductAttribute("S686")]
 [assembly: System.Reflection.AssemblyTitleAttribute("S686")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

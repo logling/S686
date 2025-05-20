@@ -199,14 +199,14 @@ public class PuzzleGenerator
         for (int i = 0; i < partitions.Count; i++) // for every partition :
         {
             board = new Board(board.N);
-            List<Move> key = new List<Move>();
+            List<Move> allPath = new List<Move>();
             List<Vector2Int> padPos = new List<Vector2Int>();
 
             for (int j = 0; j < partitions[i].Count; j++) // for every moveCount :
             {
-                padPos = GetPadPos(key);
+                padPos = GetPadPos(allPath);
                 List<Move> frogPath = GeneratePath(partitions[i][j], padPos);
-                key.AddRange(frogPath); // get frog path
+                allPath.AddRange(frogPath); // get frog path
 
                 padPos = GetPadPos(frogPath);
                 // generate lily pad for all padPos at this step
@@ -216,6 +216,11 @@ public class PuzzleGenerator
         }
     }
 
+    private void GenerateLilyPad(List<Vector2Int> inputPadPos)
+    {
+        List<string> candidates = PieceTypeCandidates();
+        
+    }
     private List<Move> GeneratePath(int moveCount, List<Vector2Int> frogOrigins)
     {
         List<Move> path = new List<Move>(); // path of frog
@@ -285,19 +290,19 @@ public class PuzzleGenerator
 
     //
     // check unique solution
-    public (bool isUniqueSolution, List<Move> key) PuzzleSolver(Board board)
+    public (bool isUniqueSolution, List<Move> solution) PuzzleSolver(Board board)
     {
-        List<Move> key = new List<Move>(); // answer moveSet
+        List<Move> solution = new List<Move>(); // answer moveSet
         List<Move> moveSet = new List<Move>(); // multiverse board moveSet
         List<Vector2Int> endingPos = new List<Vector2Int>();
         bool killSwitch = false;
 
-        CheckBoardRecursion(board, key, moveSet, endingPos, ref killSwitch);
+        CheckBoardRecursion(board, solution, moveSet, endingPos, ref killSwitch);
 
-        return (endingPos.Count == 1, key);
+        return (endingPos.Count == 1, solution);
     }
 
-    private void CheckBoardRecursion(Board board, List<Move> key, List<Move> moveSet, List<Vector2Int> endingPos, ref bool killSwitch)
+    private void CheckBoardRecursion(Board board, List<Move> solution, List<Move> moveSet, List<Vector2Int> endingPos, ref bool killSwitch)
     {
         if (killSwitch)
             return;
@@ -306,10 +311,10 @@ public class PuzzleGenerator
         {
             Piece lastPiece = board.GetLastPiece(); // need to check ending position
 
-            if (endingPos.Count == 0) // get first key
+            if (endingPos.Count == 0) // get first solution
             {
                 endingPos.Add(new Vector2Int(lastPiece.x, lastPiece.y));
-                key.AddRange(moveSet);
+                solution.AddRange(moveSet);
             }
             else if (lastPiece.x != endingPos[0].x || lastPiece.y != endingPos[0].y) // if different ending, killSwitch on
             {
@@ -329,7 +334,7 @@ public class PuzzleGenerator
             Board newBoard = board.Clone();
             newBoard.ExecuteMove(move);
             moveSet.Add(move);
-            CheckBoardRecursion(newBoard, key, moveSet, endingPos, ref killSwitch);
+            CheckBoardRecursion(newBoard, solution, moveSet, endingPos, ref killSwitch);
             if (moveSet.Count > 0) // roll back needed for next move
                 moveSet.RemoveAt(moveSet.Count - 1);
         }
