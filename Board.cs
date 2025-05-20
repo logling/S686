@@ -83,10 +83,26 @@ public class Board
         }
         return newBoard;
     }
+
+    public void Copy(Board targetBoard)
+    {
+        ClearBoard();
+        for (int i = 0; i < Size; i++)
+        {
+            for (int j = 0; j < Size; j++)
+            {
+                if (targetBoard.Grid[i, j] != null)
+                {
+                    Piece piece = new Piece(targetBoard.Grid[i, j]!.pieceType, targetBoard.Grid[i, j]!.x, targetBoard.Grid[i, j]!.y);
+                    RegisterPiece(piece);
+                }
+            }
+        }
+    }
     
     public Piece GetLastPiece()
     {
-        Piece piece = new Piece("dummy",-1,-1);
+        Piece piece = new Piece("dummy", -1, -1);
 
         for (int i = 0; i < Size; i++)
         {

@@ -4,6 +4,7 @@ public class PuzzleGenerator
     private Board board;
     public string ID = "";
     public int key = 0;
+    private Vector2Int origin;
 
     public PuzzleGenerator(int inputPieceNum)
     {
@@ -202,53 +203,69 @@ public class PuzzleGenerator
             List<Move> allPath = new List<Move>();
             List<Vector2Int> padPos = new List<Vector2Int>();
 
-            for (int j = 0; j < partitions[i].Count; j++) // for every moveCount :
+            for (int j = 0; j < partitions[i].Count; j++) // for every frog :
             {
                 padPos = GetPadPos(allPath);
-                List<Move> frogPath = GeneratePath(partitions[i][j], padPos);
-                allPath.AddRange(frogPath); // get frog path
+                List<Move> frogPath = GeneratePath(partitions[i][j], padPos); // get frog path
+                allPath.AddRange(frogPath);
 
                 padPos = GetPadPos(frogPath);
-                // generate lily pad for all padPos at this step
-                // check board
+                for (int k = 0; i < padPos.Count; k++) // for every current lily pad :
+                {
+                    Piece lilyPad = new Piece(RandomPieceType(), padPos[k].x, padPos[k].y);
+                    board.RegisterPiece(lilyPad);
+                }
+
+                (bool isValid, List<Move> partialSol) = PuzzleSolver(); // check unique solution
+
+                if (!isValid)
+                {
+
+                }
+
                 // if invalid, check which lily pad can act as frog, and change it, and repeat process until valid board
             }
         }
     }
 
-    private void GenerateLilyPad(List<Vector2Int> inputPadPos)
-    {
-        List<string> candidates = PieceTypeCandidates();
-        
-    }
     private List<Move> GeneratePath(int moveCount, List<Vector2Int> frogOrigins)
     {
         List<Move> path = new List<Move>(); // path of frog
+        List<Move> multiPath = new List<Move>(); // multiverse path of frog
         List<string> candidates = PieceTypeCandidates();
 
-        for (int i = 0; i < frogOrigins.Count; i++)
+        for (int i = 0; i < frogOrigins.Count; i++) // for every possible origin :
         {
-            for (int j = 0; j < candidates.Count; j++)
+            if (board.CountPieces() == 0) origin = frogOrigins[i];
+            for (int j = 0; j < candidates.Count; j++) // for every possible pieceType :
             {
                 Piece frog = new Piece(candidates[j], frogOrigins[i].x, frogOrigins[i].y);
+                frog.isFrog = true;
+                if (origin.x == frogOrigins[i].x && origin.y == frogOrigins[i].y) frog.isToad = true;
                 board.RegisterPiece(frog);
 
                 bool killSwitch = false;
-                FindPathRecur(board.Clone(), frog, path, moveCount, ref killSwitch);
+                FindPathRecur(board.Clone(), frog, path, multiPath, moveCount, ref killSwitch);
 
                 // if correct, return path
-                // else, remove frog, remove candidate
+                // else, remove frog
             }
         }
         return path; // fail safe
     }
 
-    private void FindPathRecur(Board currentBoard, Piece piece, List<Move> currentPath, int moveCountLeft, ref bool killSwitch)
+    private void FindPathRecur(Board currentBoard, Piece piece, List<Move> solution, List<Move> currentPath, int moveCountLeft, ref bool killSwitch)
     {
-        if (killSwitch) return;
-        else if (moveCountLeft == 0)
+        if (moveCountLeft == 0) // {recursion escape condition} if done recursion :
         {
-            // if frog is toad, check path validity, maybe by using dummy as lily pad
+            if (piece.isToad) // if frog is toad, check path
+            {
+                (bool isValid, List<Move> sol) = PuzzleSolver();
+                if (!isValid) return;
+            }
+            board.Copy(currentBoard); // save board
+            solution.AddRange(currentPath); // save frog path
+            killSwitch = true; // stop further recursion
             return;
         }
 
@@ -260,9 +277,12 @@ public class PuzzleGenerator
         {
             Board newBoard = currentBoard.Clone();
             newBoard.ExecuteMove(move);
+            Piece dummy = new Piece("dummy", move.i.x, move.i.y); // dummy has no move
+            newBoard.RegisterPiece(dummy);
             currentPath.Add(move);
+
             Piece movedPiece = newBoard.Grid[move.f.x, move.f.y]!;
-            FindPathRecur(newBoard, movedPiece, currentPath, moveCountLeft - 1, ref killSwitch);
+            FindPathRecur(newBoard, movedPiece, solution, currentPath, moveCountLeft - 1, ref killSwitch);
             if (killSwitch) return;
             currentPath.RemoveAt(currentPath.Count - 1);
         }
@@ -290,7 +310,7 @@ public class PuzzleGenerator
 
     //
     // check unique solution
-    public (bool isUniqueSolution, List<Move> solution) PuzzleSolver(Board board)
+    public (bool isUniqueSolution, List<Move> solution) PuzzleSolver()
     {
         List<Move> solution = new List<Move>(); // answer moveSet
         List<Move> moveSet = new List<Move>(); // multiverse board moveSet
@@ -302,14 +322,14 @@ public class PuzzleGenerator
         return (endingPos.Count == 1, solution);
     }
 
-    private void CheckBoardRecursion(Board board, List<Move> solution, List<Move> moveSet, List<Vector2Int> endingPos, ref bool killSwitch)
+    private void CheckBoardRecursion(Board currentBoard, List<Move> solution, List<Move> moveSet, List<Vector2Int> endingPos, ref bool killSwitch)
     {
         if (killSwitch)
             return;
 
-        if (board.CountPieces() == 1)
+        if (currentBoard.CountPieces() == 1)
         {
-            Piece lastPiece = board.GetLastPiece(); // need to check ending position
+            Piece lastPiece = currentBoard.GetLastPiece(); // need to check ending position
 
             if (endingPos.Count == 0) // get first solution
             {
@@ -325,13 +345,13 @@ public class PuzzleGenerator
             return;
         }
 
-        List<Move> allValidMoves = board.GetAllValidMoves();
+        List<Move> allValidMoves = currentBoard.GetAllValidMoves();
 
         if (allValidMoves.Count == 0) return;// dead end
 
         foreach (Move move in allValidMoves) // try all possible moves
         {
-            Board newBoard = board.Clone();
+            Board newBoard = currentBoard.Clone();
             newBoard.ExecuteMove(move);
             moveSet.Add(move);
             CheckBoardRecursion(newBoard, solution, moveSet, endingPos, ref killSwitch);
