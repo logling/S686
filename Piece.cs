@@ -4,6 +4,7 @@ public class Piece
     public int x, y;
     public bool isFrog;
     public bool isToad;
+    public bool isLily;
 
     public Piece(string type, int inputX, int inputY)
     {

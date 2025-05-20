@@ -165,34 +165,34 @@ public class PuzzleGenerator
         }
     }
 
-    private List<string> PieceTypeCandidates() // get candidates of pieceType for current board
+    private List<string> PieceTypeCandidates(Board inputBoard) // get candidates of pieceType for current board
     {
         List<string> candidates = new List<string> { "king", "queen", "rook", "bishop", "knight", "pawn" };
 
-        if (board.N >= 4 && board.N <= 10)
+        if (inputBoard.N >= 4 && inputBoard.N <= 10)
         {
-            if (board.CountPiece("king") >= 1) candidates.Remove("king");
-            if (board.CountPiece("queen") >= 1) candidates.Remove("queen");
-            if (board.CountPiece("rook") >= 2) candidates.Remove("rook");
-            if (board.CountPiece("bishop") >= 2) candidates.Remove("bishop");
-            if (board.CountPiece("knight") >= 2) candidates.Remove("knight");
-            if (board.CountPiece("pawn") >= 2) candidates.Remove("pawn");
+            if (inputBoard.CountPiece("king") >= 1) candidates.Remove("king");
+            if (inputBoard.CountPiece("queen") >= 1) candidates.Remove("queen");
+            if (inputBoard.CountPiece("rook") >= 2) candidates.Remove("rook");
+            if (inputBoard.CountPiece("bishop") >= 2) candidates.Remove("bishop");
+            if (inputBoard.CountPiece("knight") >= 2) candidates.Remove("knight");
+            if (inputBoard.CountPiece("pawn") >= 2) candidates.Remove("pawn");
         }
         else // else if (board.N == 11)
         {
-            if (board.CountPiece("king") >= 1) candidates.Remove("king");
-            if (board.CountPiece("queen") >= 2) candidates.Remove("queen");
-            if (board.CountPiece("rook") >= 4) candidates.Remove("rook");
-            if (board.CountPiece("bishop") >= 4) candidates.Remove("bishop");
-            if (board.CountPiece("knight") >= 4) candidates.Remove("knight");
-            if (board.CountPiece("pawn") >= 5) candidates.Remove("pawn");
+            if (inputBoard.CountPiece("king") >= 1) candidates.Remove("king");
+            if (inputBoard.CountPiece("queen") >= 2) candidates.Remove("queen");
+            if (inputBoard.CountPiece("rook") >= 4) candidates.Remove("rook");
+            if (inputBoard.CountPiece("bishop") >= 4) candidates.Remove("bishop");
+            if (inputBoard.CountPiece("knight") >= 4) candidates.Remove("knight");
+            if (inputBoard.CountPiece("pawn") >= 5) candidates.Remove("pawn");
         }
 
         Shuffle(candidates);
         return candidates;
     }
 
-    private void GenerateGame() // with getallpartitions()
+    private void GenerateGame() // with getallpartitions(). later partition will be chosen from a set list
     {
         List<List<int>> partitions = GetAllPartitions(board.N); // get partitions
         Shuffle(partitions);
@@ -206,33 +206,40 @@ public class PuzzleGenerator
             for (int j = 0; j < partitions[i].Count; j++) // for every frog :
             {
                 padPos = GetPadPos(allPath);
-                List<Move> frogPath = GeneratePath(partitions[i][j], padPos); // get frog path
+                List<Move> frogPath = GeneratePath(board, partitions[i][j], padPos); // get frog path
                 allPath.AddRange(frogPath);
 
                 padPos = GetPadPos(frogPath);
                 for (int k = 0; i < padPos.Count; k++) // for every current lily pad :
                 {
-                    Piece lilyPad = new Piece(RandomPieceType(), padPos[k].x, padPos[k].y);
+                    Piece lilyPad = new Piece(RandomPieceType(), padPos[k].x, padPos[k].y); // generate lily pad with random type for now
+                    lilyPad.isLily = true;
                     board.RegisterPiece(lilyPad);
                 }
 
-                (bool isValid, List<Move> partialSol) = PuzzleSolver(); // check unique solution
+                (bool isValid, List<Move> partialSol) = PuzzleSolver(board); // check unique solution
 
-                if (!isValid)
+                if (!isValid)  // if invalid, check which lily pad moved, and change it, and repeat process until valid board
                 {
-
+                    bool killSwitch = false;
+                    Board CorrectedBoard = new Board(board.N);
+                    ChangeLilyPadRecur(board, CorrectedBoard, ref killSwitch);
+                    if (killSwitch) // if corrected board found
+                    {
+                        board.Copy(CorrectedBoard);
+                        return;
+                    }
                 }
-
-                // if invalid, check which lily pad can act as frog, and change it, and repeat process until valid board
             }
         }
+        // at this point error occurred.
     }
 
-    private List<Move> GeneratePath(int moveCount, List<Vector2Int> frogOrigins)
+    private List<Move> GeneratePath(Board inputBoard, int moveCount, List<Vector2Int> frogOrigins)
     {
         List<Move> path = new List<Move>(); // path of frog
         List<Move> multiPath = new List<Move>(); // multiverse path of frog
-        List<string> candidates = PieceTypeCandidates();
+        List<string> candidates = PieceTypeCandidates(inputBoard);
 
         for (int i = 0; i < frogOrigins.Count; i++) // for every possible origin :
         {
@@ -260,8 +267,7 @@ public class PuzzleGenerator
         {
             if (piece.isToad) // if frog is toad, check path
             {
-                // 작성 중
-                Board toadBoard = new Board(board.N);
+                Board toadBoard = new Board(board.N); // toadBoard contains only toad's path and dummies
                 toadBoard.RegisterPiece(piece);
                 for (int i = 0; i < currentPath.Count(); i++)
                 {
@@ -269,7 +275,7 @@ public class PuzzleGenerator
                     toadBoard.RegisterPiece(dummyLilyPad);
                 }
 
-                (bool isValid, List<Move> sol) = PuzzleSolver();
+                (bool isValid, List<Move> sol) = PuzzleSolver(toadBoard);
                 if (!isValid) return;
             }
             board.Copy(currentBoard); // save board
@@ -293,7 +299,8 @@ public class PuzzleGenerator
             Piece movedPiece = newBoard.Grid[move.f.x, move.f.y]!;
             FindPathRecur(newBoard, movedPiece, solution, currentPath, moveCountLeft - 1, ref killSwitch);
             if (killSwitch) return;
-            currentPath.RemoveAt(currentPath.Count - 1);
+            if (currentPath.Count() > 0)  // roll back needed for next move
+                currentPath.RemoveAt(currentPath.Count - 1);
         }
     }
 
@@ -317,25 +324,23 @@ public class PuzzleGenerator
         return padPos;
     }
 
+
     //
     // check unique solution
-    public (bool isUniqueSolution, List<Move> solution) PuzzleSolver()
+    public (bool isUniqueSolution, List<Move> solution) PuzzleSolver(Board inputBoard)
     {
         List<Move> solution = new List<Move>(); // answer moveSet
         List<Move> moveSet = new List<Move>(); // multiverse board moveSet
         List<Vector2Int> endingPos = new List<Vector2Int>();
         bool killSwitch = false;
 
-        CheckBoardRecursion(board, solution, moveSet, endingPos, ref killSwitch);
+        CheckBoardRecur(inputBoard, solution, moveSet, endingPos, ref killSwitch);
 
         return (endingPos.Count == 1, solution);
     }
 
-    private void CheckBoardRecursion(Board currentBoard, List<Move> solution, List<Move> moveSet, List<Vector2Int> endingPos, ref bool killSwitch)
+    private void CheckBoardRecur(Board currentBoard, List<Move> solution, List<Move> moveSet, List<Vector2Int> endingPos, ref bool killSwitch)
     {
-        if (killSwitch)
-            return;
-
         if (currentBoard.CountPieces() == 1)
         {
             Piece lastPiece = currentBoard.GetLastPiece(); // need to check ending position
@@ -363,9 +368,84 @@ public class PuzzleGenerator
             Board newBoard = currentBoard.Clone();
             newBoard.ExecuteMove(move);
             moveSet.Add(move);
-            CheckBoardRecursion(newBoard, solution, moveSet, endingPos, ref killSwitch);
+            CheckBoardRecur(newBoard, solution, moveSet, endingPos, ref killSwitch);
+            if (killSwitch) return;
             if (moveSet.Count > 0) // roll back needed for next move
                 moveSet.RemoveAt(moveSet.Count - 1);
+        }
+    }
+
+    private void ChangeLilyPadRecur(Board inputBoard, Board CorrectedBoard, ref bool killSwitch2)
+    {
+        Board multiBoard = inputBoard.Clone();
+        Vector2Int multiLilyPos = new Vector2Int(-1, -1); // multiverse lily position
+        Vector2Int wrongLilyPos = new Vector2Int(-1, -1); // answer lily position
+
+        bool killSwitch1 = false;
+
+        FindWrongLilyRecur(inputBoard, multiLilyPos, wrongLilyPos, ref killSwitch1); // find first moving lily
+        List<string> candidates = PieceTypeCandidates(inputBoard);
+
+        for (int i = 0; i < candidates.Count(); i++) // for every pieceType
+        {
+            multiBoard.Grid[wrongLilyPos.x, wrongLilyPos.y]!.pieceType = candidates[i]; // change lily's pieceType
+
+            (bool isValid, List<Move> partialSol) = PuzzleSolver(multiBoard); // check unique solution
+            if (isValid)
+            {
+                CorrectedBoard.Copy(multiBoard);
+                killSwitch2 = true;
+                return;
+            }
+            else
+            {
+                ChangeLilyPadRecur(multiBoard, CorrectedBoard, ref killSwitch2); // find and change next moving lily
+                if (killSwitch2) // if solution found
+                    return;
+            }
+        }
+        // at this point, all multiverse failed, and killSwitch2 is false
+    }
+
+    private void FindWrongLilyRecur(Board currentBoard, Vector2Int susLilyPos, Vector2Int resLilyPos, ref bool killSwitch)
+    {
+        if (killSwitch)
+            return;
+
+        if (currentBoard.CountPieces() == 1)
+        {
+            if (susLilyPos.x != -1) // if lily moved and game ended, wrong lily found
+            {
+                resLilyPos.x = susLilyPos.x;
+                resLilyPos.y = susLilyPos.y;
+                killSwitch = true;
+                return;
+            }
+            else return; // if no lily moved and game ended, keep searching
+        }
+
+        List<Move> allValidMoves = currentBoard.GetAllValidMoves();
+
+        if (allValidMoves.Count == 0) return; // dead end
+
+        foreach (Move move in allValidMoves) // try all possible moves
+        {
+            if (currentBoard.Grid[move.i.x, move.i.y]!.isLily && susLilyPos.x == -1) // if lily moves and it's first one, suspect this lily
+            {
+                susLilyPos.x = move.i.x;
+                susLilyPos.y = move.i.y;
+            }
+
+            Board newBoard = currentBoard.Clone();
+            newBoard.ExecuteMove(move);
+
+            FindWrongLilyRecur(newBoard, susLilyPos, resLilyPos, ref killSwitch);
+            if (killSwitch) return;
+            if (susLilyPos.x != -1) // roll back needed for next move
+            {
+                susLilyPos.x = -1;
+                susLilyPos.y = -1;
+            }
         }
     }
 
