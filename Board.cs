@@ -113,7 +113,7 @@ public class Board
     }
 
     public List<Move> GetValidMoves(Piece piece, bool backwards = false) // get valid moves of a piece on board.
-    {
+    { // if backwards false, piece takes
         List<Move> moves = new List<Move>();
 
         if (piece.pieceType == "knight")
@@ -239,6 +239,8 @@ public class Board
                 }
             }
         }
+        else if (piece.pieceType == "dummy")
+            return moves;
 
         return moves;
     }

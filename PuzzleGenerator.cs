@@ -1,6 +1,30 @@
 public class PuzzleGenerator
 {
-    Random rand = new Random();
+    private Random rand = new Random();
+    private Board board;
+    public string ID = "";
+    public int key = 0;
+
+    public PuzzleGenerator(int inputPieceNum)
+    {
+        board = new Board(inputPieceNum);
+    }
+
+    //
+    // common
+    private static void Shuffle<T>(List<T> inputList)
+    {
+        Random rand = new Random();
+
+        for (int i = inputList.Count - 1; i > 0; i--) // Fisher-Yates shuffle
+        {
+            int k = rand.Next(i + 1);
+            T value = inputList[k];
+            inputList[k] = inputList[i];
+            inputList[i] = value;
+        }
+    }
+
     //
     // partition
     public List<List<int>> GetAllPartitions(int n) // n is target of integer partition
@@ -8,7 +32,6 @@ public class PuzzleGenerator
         List<List<int>> result = new List<List<int>>();
         PartitionRecursion(n, n, new List<int>(), result);
         SortPartitions(result);
-        PrintPartitions(result);
         return result;
     }
 
@@ -44,50 +67,19 @@ public class PuzzleGenerator
         }
     }
 
-    public static void Shuffle<T>(List<T> inputList)
-    {
-        Random rand = new Random();
-
-        for (int i = inputList.Count - 1; i > 0; i--) // Fisher-Yates shuffle
-        {
-            int k = rand.Next(i + 1);
-            T value = inputList[k];
-            inputList[k] = inputList[i];
-            inputList[i] = value;
-        }
-    }
 
     //
     // path
-    private void FirstLoop() // generates frogs. second loop generates lily pads
+    private string RandomPieceType() // get random pieceType according to pieceNum rules
     {
-
-    }
-
-    private Piece TakeRandomPiece(List<Piece> pieces) // get random piece and remove from list
-    {
-        Piece piece = pieces[rand.Next(pieces.Count)];
-        pieces.Remove(piece);
-        return piece;
-    }
-
-    private Move TakeRandomMove(List<Move> moves) // get random move and remove from list
-    {
-        Move move = moves[rand.Next(moves.Count)];
-        moves.Remove(move);
-        return move;
-    }
-
-    private string RandomPieceType(Board board) // get random pieceType according to pieceNum rules
-    {
-        List<string> pieceTypeCandidate = new List<string> { "king","queen","rook","bishop","knight","pawn" };
+        List<string> pieceTypeCandidate = new List<string> { "king", "queen", "rook", "bishop", "knight", "pawn" };
         string randomPieceType;
 
         if (board.N >= 4 && board.N <= 8)
         {
             while (true)
             {
-                randomPieceType = pieceTypeCandidate[rand.Next(pieceTypeCandidate.Count)]; // get random pieceType from candidates list
+                randomPieceType = pieceTypeCandidate[rand.Next(pieceTypeCandidate.Count)]; // get random pieceType from candidate list
 
                 if (randomPieceType == "king" || randomPieceType == "queen") // for king and queen, only 1 allowed
                     pieceTypeCandidate.Remove(randomPieceType);
@@ -102,7 +94,7 @@ public class PuzzleGenerator
         {
             while (true)
             {
-                randomPieceType = pieceTypeCandidate[rand.Next(pieceTypeCandidate.Count)]; // get random pieceType from candidates list
+                randomPieceType = pieceTypeCandidate[rand.Next(pieceTypeCandidate.Count)]; // get random pieceType from candidate list
 
                 if (board.CountPieces() == 8 && pieceTypeCandidate.Contains("king")) // always 1 king
                     return "king";
@@ -120,13 +112,13 @@ public class PuzzleGenerator
         {
             while (true)
             {
-                randomPieceType = pieceTypeCandidate[rand.Next(pieceTypeCandidate.Count)]; // get random pieceType from candidates list
+                randomPieceType = pieceTypeCandidate[rand.Next(pieceTypeCandidate.Count)]; // get random pieceType from candidate list
 
                 if (board.CountPieces() == 9 && pieceTypeCandidate.Contains("king")) // always 1 king
                     return "king";
                 if (board.CountPieces() == 9 && pieceTypeCandidate.Contains("queen")) // always 1 queen
                     return "queen";
-                    
+
                 if (randomPieceType == "king" || randomPieceType == "queen") // for king and queen, only 1 allowed
                     pieceTypeCandidate.Remove(randomPieceType);
 
@@ -140,17 +132,17 @@ public class PuzzleGenerator
         {
             while (true)
             {
-                randomPieceType = pieceTypes[rand.Next(pieceTypes.Count)]; // get random pieceType from candidates list
+                randomPieceType = pieceTypeCandidate[rand.Next(pieceTypeCandidate.Count)]; // get random pieceType from candidate list
 
                 if (randomPieceType == "king") // only 1 king allowed
-                    pieceTypes.Remove(randomPieceType);
+                    pieceTypeCandidate.Remove(randomPieceType);
 
                 else if (randomPieceType == "queen") // only 2 queen allowed
                 {
                     if (board.CountPiece(randomPieceType) < 2)
                         return "queen";
                     else
-                        pieceTypes.Remove("queen");
+                        pieceTypeCandidate.Remove("queen");
                 }
 
                 else if (randomPieceType == "pawn") // only 5 pawns allowed
@@ -158,79 +150,139 @@ public class PuzzleGenerator
                     if (board.CountPiece(randomPieceType) < 5)
                         return "pawn";
                     else
-                        pieceTypes.Remove("pawn");
+                        pieceTypeCandidate.Remove("pawn");
                 }
-                
+
                 else // for other kind, 4 allowed
                 {
                     if (board.CountPiece(randomPieceType) < 4)
                         return randomPieceType;
                     else
-                        pieceTypes.Remove(randomPieceType);
+                        pieceTypeCandidate.Remove(randomPieceType);
                 }
             }
         }
     }
 
-    private List<Move> RandomPath(Board board, string inputPieceType, int moveN, bool isFirst = false)
+    private List<string> PieceTypeCandidates() // get candidates of pieceType for current board
     {
-        List<Move> moveCandidates = new List<Move>();
-        List<Move> moveBanned = new List<Move>();
+        List<string> candidates = new List<string> { "king", "queen", "rook", "bishop", "knight", "pawn" };
 
-        if (isFirst)
+        if (board.N >= 4 && board.N <= 10)
         {
-            while (true)
-            {
-                int x = rand.Next(board.Size);
-                int y = rand.Next(board.Size);
-                Piece movingPiece = new Piece(inputPieceType, x, y);
+            if (board.CountPiece("king") >= 1) candidates.Remove("king");
+            if (board.CountPiece("queen") >= 1) candidates.Remove("queen");
+            if (board.CountPiece("rook") >= 2) candidates.Remove("rook");
+            if (board.CountPiece("bishop") >= 2) candidates.Remove("bishop");
+            if (board.CountPiece("knight") >= 2) candidates.Remove("knight");
+            if (board.CountPiece("pawn") >= 2) candidates.Remove("pawn");
+        }
+        else // else if (board.N == 11)
+        {
+            if (board.CountPiece("king") >= 1) candidates.Remove("king");
+            if (board.CountPiece("queen") >= 2) candidates.Remove("queen");
+            if (board.CountPiece("rook") >= 4) candidates.Remove("rook");
+            if (board.CountPiece("bishop") >= 4) candidates.Remove("bishop");
+            if (board.CountPiece("knight") >= 4) candidates.Remove("knight");
+            if (board.CountPiece("pawn") >= 5) candidates.Remove("pawn");
+        }
 
-                for (int i = 0; i < moveN;)
-                {
-                    moveCandidates = board.GetValidMoves(movingPiece, true);
-                    if (moveCandidates.Count() == 0) break;
-                    Move chosenMove = TakeRandomMove(moveCandidates);
-                }
-                break;
+        Shuffle(candidates);
+        return candidates;
+    }
+
+    private void GenerateGame() // with getallpartitions()
+    {
+        List<List<int>> partitions = GetAllPartitions(board.N); // get partitions
+        Shuffle(partitions);
+
+        for (int i = 0; i < partitions.Count; i++) // for every partition :
+        {
+            board = new Board(board.N);
+            List<Move> key = new List<Move>();
+            List<Vector2Int> padPos = new List<Vector2Int>();
+
+            for (int j = 0; j < partitions[i].Count; j++) // for every moveCount :
+            {
+                padPos = GetPadPos(key);
+                List<Move> frogPath = GeneratePath(partitions[i][j], padPos);
+                key.AddRange(frogPath); // get frog path
+
+                padPos = GetPadPos(frogPath);
+                // generate lily pad for all padPos at this step
+                // check board
+                // if invalid, check which lily pad can act as frog, and change it, and repeat process until valid board
             }
+        }
+    }
+
+    private List<Move> GeneratePath(int moveCount, List<Vector2Int> frogOrigins)
+    {
+        List<Move> path = new List<Move>(); // path of frog
+        List<string> candidates = PieceTypeCandidates();
+
+        for (int i = 0; i < frogOrigins.Count; i++)
+        {
+            for (int j = 0; j < candidates.Count; j++)
+            {
+                Piece frog = new Piece(candidates[j], frogOrigins[i].x, frogOrigins[i].y);
+                board.RegisterPiece(frog);
+
+                bool killSwitch = false;
+                FindPathRecur(board.Clone(), frog, path, moveCount, ref killSwitch);
+
+                // if correct, return path
+                // else, remove frog, remove candidate
+            }
+        }
+        return path; // fail safe
+    }
+
+    private void FindPathRecur(Board currentBoard, Piece piece, List<Move> currentPath, int moveCountLeft, ref bool killSwitch)
+    {
+        if (killSwitch) return;
+        else if (moveCountLeft == 0)
+        {
+            // if frog is toad, check path validity, maybe by using dummy as lily pad
+            return;
+        }
+
+        List<Move> possibleMoves = currentBoard.GetValidMoves(piece, true);
+        if (possibleMoves.Count == 0) return;
+        Shuffle(possibleMoves);
+
+        foreach (Move move in possibleMoves)
+        {
+            Board newBoard = currentBoard.Clone();
+            newBoard.ExecuteMove(move);
+            currentPath.Add(move);
+            Piece movedPiece = newBoard.Grid[move.f.x, move.f.y]!;
+            FindPathRecur(newBoard, movedPiece, currentPath, moveCountLeft - 1, ref killSwitch);
+            if (killSwitch) return;
+            currentPath.RemoveAt(currentPath.Count - 1);
+        }
+    }
+
+    private List<Vector2Int> GetPadPos(List<Move> path) // get pad positions of a frog path
+    {
+        List<Vector2Int> padPos = new List<Vector2Int>();
+
+        if (path.Count() == 0) // if first frog, padPos is whole board
+        {
+            for (int y = 0; y < board.Size; y++)
+                for (int x = 0; x < board.Size; x++)
+                    padPos.Add(new Vector2Int(x, y));
         }
         else
         {
-            while (true)
-            {
-
-                break;
-            }
+            for (int i = 0; i < path.Count(); i++)
+                padPos.Add(path[i].i);
         }
+
+        Shuffle(padPos);
+        return padPos;
     }
 
-    private List<Move> GetValidPath(Board board, Piece piece, List<Move> givenMove, int moveN)
-    {
-        List<Move> path = new List<Move>();
-        bool killSwitch = false;
-
-        pathRecur(board, piece, path, givenMove, 0, moveN, ref killSwitch);
-
-        return path;
-    }
-
-    private void pathRecur(Board board, Piece piece, List<Move> path, List<Move> givenMove, int moveCount, int moveN, ref bool killSwitch)
-    {
-        if (killSwitch) return;
-        if (moveCount == moveN) return;
-
-        List<Move> currentValidMoves = board.Get
-        foreach (Move move in givenMove)
-        {
-            Board newBoard = board.Clone();
-            newBoard.ExecuteMove(move);
-            moveCount++;
-            path.Add(move);
-            pathRecur(newBoard, piece, )
-
-
-        }
-    }
     //
     // check unique solution
     public (bool isUniqueSolution, List<Move> key) PuzzleSolver(Board board)
@@ -270,8 +322,7 @@ public class PuzzleGenerator
 
         List<Move> allValidMoves = board.GetAllValidMoves();
 
-        if (allValidMoves.Count == 0) // dead end
-            return;
+        if (allValidMoves.Count == 0) return;// dead end
 
         foreach (Move move in allValidMoves) // try all possible moves
         {
@@ -283,4 +334,8 @@ public class PuzzleGenerator
                 moveSet.RemoveAt(moveSet.Count - 1);
         }
     }
+
+    //
+    // result
+
 }
