@@ -247,11 +247,11 @@ public class PuzzleGenerator
                 bool killSwitch = false;
                 FindPathRecur(board.Clone(), frog, path, multiPath, moveCount, ref killSwitch);
 
-                // if correct, return path
-                // else, remove frog
+                if (path.Count() == moveCount) return path;
+                else board.RemovePiece(frog.x, frog.y);
             }
         }
-        return path; // fail safe
+        return path; // error
     }
 
     private void FindPathRecur(Board currentBoard, Piece piece, List<Move> solution, List<Move> currentPath, int moveCountLeft, ref bool killSwitch)
@@ -260,6 +260,15 @@ public class PuzzleGenerator
         {
             if (piece.isToad) // if frog is toad, check path
             {
+                // 작성 중
+                Board toadBoard = new Board(board.N);
+                toadBoard.RegisterPiece(piece);
+                for (int i = 0; i < currentPath.Count(); i++)
+                {
+                    Piece dummyLilyPad = new Piece("dummy", currentPath[i].i.x, currentPath[i].i.y);
+                    toadBoard.RegisterPiece(dummyLilyPad);
+                }
+
                 (bool isValid, List<Move> sol) = PuzzleSolver();
                 if (!isValid) return;
             }
