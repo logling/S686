@@ -1,6 +1,6 @@
 public class PuzzleGenerator
 {
-    private Random rand = new Random();
+    private Random rand = new Random(12345);
     private Board board;
     public string ID = "";
     public int key = 0;
@@ -15,7 +15,7 @@ public class PuzzleGenerator
     // common
     private static void Shuffle<T>(List<T> inputList)
     {
-        Random rand = new Random();
+        Random rand = new Random(12345);
 
         for (int i = inputList.Count - 1; i > 0; i--) // Fisher-Yates shuffle
         {
@@ -26,6 +26,25 @@ public class PuzzleGenerator
         }
     }
 
+    public Board GetBoard()
+    {
+        return board;
+    }
+
+    private string GetPieceSymbol(string pieceType)
+{
+    return pieceType switch
+    {
+        "king" => "K",
+        "queen" => "Q", 
+        "rook" => "R",
+        "bishop" => "B",
+        "knight" => "N",  // 나이트는 N으로 표시
+        "pawn" => "P",
+        "dummy" => "D",
+        _ => "?"
+    };
+}
     //
     // partition
     public List<List<int>> GetAllPartitions(int n) // n is target of integer partition
@@ -192,13 +211,16 @@ public class PuzzleGenerator
         return candidates;
     }
 
-    private void GenerateGame() // with getallpartitions(). later partition will be chosen from a set list
+    public void GenerateGame() // with getallpartitions(). later partition will be chosen from a set list
     {
-        List<List<int>> partitions = GetAllPartitions(board.N); // get partitions
+        List<List<int>> partitions = GetAllPartitions(board.N - 1); // get partitions
         Shuffle(partitions);
 
         for (int i = 0; i < partitions.Count; i++) // for every partition :
         {
+            Console.WriteLine("\n--- 게임 생성 정보 ---"); // test print
+            Console.WriteLine($"선택된 파티션: {string.Join(",", partitions[i])}");
+
             board = new Board(board.N);
             List<Move> allPath = new List<Move>();
             List<Vector2Int> padPos = new List<Vector2Int>();
@@ -209,12 +231,26 @@ public class PuzzleGenerator
                 List<Move> frogPath = GeneratePath(board, partitions[i][j], padPos); // get frog path
                 allPath.AddRange(frogPath);
 
-                padPos = GetPadPos(frogPath);
-                for (int k = 0; i < padPos.Count; k++) // for every current lily pad :
+                // 개구리 경로 정보 출력 (frogPath 획득 후) test print
+                Console.WriteLine($"\n개구리 #{j+1} 정보:");
+                Console.WriteLine($"- 움직임 수: {partitions[i][j]}");
+                Console.WriteLine($"- 타입: {board.Grid[frogPath[0].f.x, frogPath[0].f.y]!.pieceType}");
+                Console.WriteLine($"- 시작 위치: ({frogPath[0].i.x}, {frogPath[0].i.y})");
+                Console.WriteLine("- 경로:");
+                foreach (Move move in frogPath)
                 {
-                    Piece lilyPad = new Piece(RandomPieceType(), padPos[k].x, padPos[k].y); // generate lily pad with random type for now
+                    Console.WriteLine($"  ({move.i.x}, {move.i.y}) -> ({move.f.x}, {move.f.y})");
+                }
+
+                padPos = GetPadPos(frogPath);
+                Console.WriteLine("\n릴리패드 정보:"); // test print
+                for (int k = 0; k < padPos.Count; k++) // for every current lily pad :
+                {
+                    List<string> lilyTypeCandidates = PieceTypeCandidates(board);
+                    Piece lilyPad = new Piece(lilyTypeCandidates[0], padPos[k].x, padPos[k].y); // generate lily pad with random type for now
                     lilyPad.isLily = true;
                     board.RegisterPiece(lilyPad);
+                    Console.WriteLine($"- 릴리패드 #{k+1}: 타입={lilyPad.pieceType}, 위치=({lilyPad.x}, {lilyPad.y})"); // test print
                 }
 
                 (bool isValid, List<Move> partialSol) = PuzzleSolver(board); // check unique solution
@@ -223,6 +259,38 @@ public class PuzzleGenerator
                 {
                     bool killSwitch = false;
                     Board CorrectedBoard = new Board(board.N);
+
+                    Console.WriteLine($"보드 크기: {board.Size}x{board.Size}");
+                    for (int y = board.Size - 1; y >= 0; y--)
+                    {
+                        for (int x = 0; x < board.Size; x++)
+                        {
+                            if (board.Grid[x, y] != null)
+                            {
+                                string pieceType = board.Grid[x, y]!.pieceType;
+                                string symbol = GetPieceSymbol(pieceType);
+                                
+                                // 역할에 따른 색상 추가
+                                if (board.Grid[x, y]!.isFrog)
+                                    Console.ForegroundColor = ConsoleColor.Green;
+                                else if (board.Grid[x, y]!.isToad)
+                                    Console.ForegroundColor = ConsoleColor.DarkGreen;
+                                else if (board.Grid[x, y]!.isLily)
+                                    Console.ForegroundColor = ConsoleColor.Cyan;
+                                else
+                                    Console.ForegroundColor = ConsoleColor.White;
+                                    
+                                Console.Write($"[{symbol}]");
+                                Console.ResetColor();
+                            }
+                            else
+                            {
+                                Console.Write("[ ]");
+                            }
+                        }
+                        Console.WriteLine();
+                    }
+
                     ChangeLilyPadRecur(board, CorrectedBoard, ref killSwitch);
                     if (killSwitch) // if corrected board found
                     {
@@ -383,7 +451,7 @@ public class PuzzleGenerator
 
         bool killSwitch1 = false;
 
-        FindWrongLilyRecur(inputBoard, multiLilyPos, wrongLilyPos, ref killSwitch1); // find first moving lily
+        FindWrongLilyRecur(inputBoard, ref multiLilyPos, ref wrongLilyPos, ref killSwitch1); // find first moving lily
         List<string> candidates = PieceTypeCandidates(inputBoard);
 
         for (int i = 0; i < candidates.Count(); i++) // for every pieceType
@@ -407,7 +475,7 @@ public class PuzzleGenerator
         // at this point, all multiverse failed, and killSwitch2 is false
     }
 
-    private void FindWrongLilyRecur(Board currentBoard, Vector2Int susLilyPos, Vector2Int resLilyPos, ref bool killSwitch)
+    private void FindWrongLilyRecur(Board currentBoard, ref Vector2Int susLilyPos, ref Vector2Int resLilyPos, ref bool killSwitch)
     {
         if (killSwitch)
             return;
@@ -439,7 +507,7 @@ public class PuzzleGenerator
             Board newBoard = currentBoard.Clone();
             newBoard.ExecuteMove(move);
 
-            FindWrongLilyRecur(newBoard, susLilyPos, resLilyPos, ref killSwitch);
+            FindWrongLilyRecur(newBoard, ref susLilyPos, ref resLilyPos, ref killSwitch);
             if (killSwitch) return;
             if (susLilyPos.x != -1) // roll back needed for next move
             {
