@@ -1,6 +1,6 @@
 public class PuzzleGenerator
 {
-    private Random rand = new Random(12345);
+    private Random rand = new Random();
     private Board board;
     public string ID = "";
     public int key = 0;
@@ -15,7 +15,7 @@ public class PuzzleGenerator
     //
     private static void Shuffle<T>(List<T> inputList)
     {
-        Random rand = new Random(12345);
+        Random rand = new Random();
 
         for (int i = inputList.Count - 1; i > 0; i--) // Fisher-Yates shuffle
         {
@@ -220,9 +220,6 @@ public class PuzzleGenerator
 
         for (int i = 0; i < partitions.Count; i++) // for every partition :
         {
-            Console.WriteLine("\n--- 게임 생성 정보 ---"); // test print
-            Console.WriteLine($"선택된 파티션: {string.Join(",", partitions[i])}");
-
             Board multiboard = board.Clone();
             List<Move> allPath = new List<Move>();
             List<Vector2Int> padPos = new List<Vector2Int>();
@@ -232,19 +229,7 @@ public class PuzzleGenerator
                 padPos = GetPadPos(allPath);
                 List<Move> frogPath = GeneratePath(multiboard, partitions[i][j], padPos); // get frog path
 
-                // 개구리 경로 정보 출력 (frogPath 획득 후) test print
-                Console.WriteLine($"\n개구리 #{j + 1} 정보:");
-                Console.WriteLine($"- 움직임 수: {partitions[i][j]}");
-                Console.WriteLine($"- 타입: {multiboard.Grid[frogPath.Last().f.x, frogPath.Last().f.y]!.pieceType}");
-                Console.WriteLine($"- 시작 위치: ({frogPath[0].i.x}, {frogPath[0].i.y})");
-                Console.WriteLine("- 경로:");
-                foreach (Move move in frogPath)
-                {
-                    Console.WriteLine($"  ({move.i.x}, {move.i.y}) -> ({move.f.x}, {move.f.y})");
-                }
-
                 padPos = GetPadPos(frogPath);
-                Console.WriteLine("\n릴리패드 정보:"); // test print
                 for (int k = 0; k < padPos.Count; k++) // for every current lily pad :
                 {
                     List<string> lilyTypeCandidates = PieceTypeCandidates(multiboard);
@@ -252,7 +237,6 @@ public class PuzzleGenerator
                     lilyPad.isLily = true;
                     multiboard.RemovePiece(padPos[k].x, padPos[k].y);
                     multiboard.RegisterPiece(lilyPad);
-                    Console.WriteLine($"- 릴리패드 #{k + 1}: 타입={lilyPad.pieceType}, 위치=({lilyPad.x}, {lilyPad.y})"); // test print
                 }
 
                 (bool isValid, List<Move> partialSol) = PuzzleSolver(multiboard); // check unique solution
@@ -262,38 +246,7 @@ public class PuzzleGenerator
                     bool killSwitch = false;
                     Board CorrectedBoard = new Board(multiboard.N);
 
-                    Console.WriteLine($"보드 크기: {multiboard.Size}x{multiboard.Size}"); // test print
-                    for (int y = multiboard.Size - 1; y >= 0; y--)
-                    {
-                        for (int x = 0; x < multiboard.Size; x++)
-                        {
-                            if (multiboard.Grid[x, y] != null)
-                            {
-                                string pieceType = multiboard.Grid[x, y]!.pieceType;
-                                string symbol = GetPieceSymbol(pieceType);
-
-                                // 역할에 따른 색상 추가
-                                if (multiboard.Grid[x, y]!.isFrog)
-                                    Console.ForegroundColor = ConsoleColor.Green;
-                                else if (multiboard.Grid[x, y]!.isToad)
-                                    Console.ForegroundColor = ConsoleColor.DarkGreen;
-                                else if (multiboard.Grid[x, y]!.isLily)
-                                    Console.ForegroundColor = ConsoleColor.Cyan;
-                                else
-                                    Console.ForegroundColor = ConsoleColor.White;
-
-                                Console.Write($"[{symbol}]");
-                                Console.ResetColor();
-                            }
-                            else
-                            {
-                                Console.Write("[ ]");
-                            }
-                        }
-                        Console.WriteLine();
-                    }
-
-                    ChangeLilyPadRecur(board, CorrectedBoard, ref killSwitch);
+                    ChangeLilyPadRecur(multiboard, CorrectedBoard, ref killSwitch);
                     if (killSwitch) // if corrected board found
                     {
                         multiboard.Copy(CorrectedBoard);
@@ -304,6 +257,124 @@ public class PuzzleGenerator
             }
         }
         // at this point error occurred.
+    }
+
+    public void PrintFinalBoard()
+    {
+        Console.WriteLine("\n--- 최종 생성된 보드 ---");
+        Console.WriteLine($"보드 크기: {board.Size}x{board.Size}");
+        Console.WriteLine($"총 기물 수: {board.CountPieces()}");
+
+        // 기물 종류별 카운트 출력
+        Console.WriteLine("\n기물 통계:");
+        string[] pieceTypes = { "king", "queen", "rook", "bishop", "knight", "pawn", "dummy" };
+        foreach (string type in pieceTypes)
+        {
+            int count = board.CountPiece(type);
+            if (count > 0)
+                Console.WriteLine($"- {type}: {count}개");
+        }
+
+        // 기물 특성별 카운트 출력
+        int frogCount = 0;
+        int toadCount = 0;
+        int lilyCount = 0;
+
+        for (int y = 0; y < board.Size; y++)
+        {
+            for (int x = 0; x < board.Size; x++)
+            {
+                if (board.Grid[x, y] != null)
+                {
+                    if (board.Grid[x, y]!.isFrog) frogCount++;
+                    if (board.Grid[x, y]!.isToad) toadCount++;
+                    if (board.Grid[x, y]!.isLily) lilyCount++;
+                }
+            }
+        }
+
+        Console.WriteLine($"- 개구리: {frogCount}개");
+        Console.WriteLine($"- 두꺼비: {toadCount}개");
+        Console.WriteLine($"- 릴리패드: {lilyCount}개");
+
+        // 보드 시각적 표현
+        Console.WriteLine("\n보드:");
+
+        // 열 인덱스 표시
+        Console.Write("  ");
+        for (int x = 0; x < board.Size; x++)
+        {
+            Console.Write($" {x} ");
+        }
+        Console.WriteLine();
+
+        for (int y = board.Size - 1; y >= 0; y--)
+        {
+            // 행 인덱스 표시
+            Console.Write($"{y} ");
+
+            for (int x = 0; x < board.Size; x++)
+            {
+                if (board.Grid[x, y] != null)
+                {
+                    string pieceType = board.Grid[x, y]!.pieceType;
+                    string symbol = GetPieceSymbol(pieceType);
+
+                    // 역할에 따른 색상 추가
+                    if (board.Grid[x, y]!.isFrog)
+                        Console.ForegroundColor = ConsoleColor.Green;
+                    else if (board.Grid[x, y]!.isToad)
+                        Console.ForegroundColor = ConsoleColor.DarkGreen;
+                    else if (board.Grid[x, y]!.isLily)
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                    else
+                        Console.ForegroundColor = ConsoleColor.White;
+
+                    Console.Write($"[{symbol}]");
+                    Console.ResetColor();
+                }
+                else
+                {
+                    Console.Write("[ ]");
+                }
+            }
+            Console.WriteLine();
+        }
+
+        // 보드 인덱스 범례
+        Console.WriteLine("\n범례:");
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.Write("[X]");
+        Console.ResetColor();
+        Console.Write(" - 개구리  ");
+
+        Console.ForegroundColor = ConsoleColor.DarkGreen;
+        Console.Write("[X]");
+        Console.ResetColor();
+        Console.Write(" - 두꺼비  ");
+
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.Write("[X]");
+        Console.ResetColor();
+        Console.WriteLine(" - 릴리패드");
+
+        Console.WriteLine("\n기물 범례:");
+        Console.WriteLine("K - 킹, Q - 퀸, R - 룩, B - 비숍, N - 나이트, P - 폰, D - 더미");
+
+        // 퍼즐이 유효한지 최종 확인
+        (bool isValid, List<Move> solution) = PuzzleSolver(board);
+        Console.WriteLine($"\n퍼즐 유효성: {(isValid ? "유효함 (유일한 해결책 존재)" : "유효하지 않음 (해결책이 없거나 여러 개)")}");
+
+        if (isValid)
+        {
+            Console.WriteLine("\n해결책:");
+            for (int i = 0; i < solution.Count; i++)
+            {
+                Move move = solution[i];
+                Piece piece = board.Clone().Grid[move.i.x, move.i.y]!;
+                Console.WriteLine($"{i + 1}. {piece.pieceType} ({move.i.x}, {move.i.y}) → ({move.f.x}, {move.f.y})");
+            }
+        }
     }
 
     private List<Move> GeneratePath(Board inputBoard, int moveCount, List<Vector2Int> frogOrigins)
@@ -498,16 +569,16 @@ public class PuzzleGenerator
         }
     }
 
-    private void ChangeLilyPadRecur(Board inputBoard, Board CorrectedBoard, ref bool killSwitch2)
+    private void ChangeLilyPadRecur(Board multiBoard, Board CorrectedBoard, ref bool killSwitch2)
     {
-        Board multiBoard = inputBoard.Clone();
+        //Board multiBoard = inputBoard.Clone();
         Vector2Int multiLilyPos = new Vector2Int(-1, -1); // multiverse lily position
         Vector2Int wrongLilyPos = new Vector2Int(-1, -1); // answer lily position
 
         bool killSwitch1 = false;
 
-        FindWrongLilyRecur(inputBoard, ref multiLilyPos, ref wrongLilyPos, ref killSwitch1); // find first moving lily
-        List<string> candidates = PieceTypeCandidates(inputBoard);
+        FindWrongLilyRecur(multiBoard, ref multiLilyPos, ref wrongLilyPos, ref killSwitch1); // find first moving lily
+        List<string> candidates = PieceTypeCandidates(multiBoard);
 
         for (int i = 0; i < candidates.Count(); i++) // for every pieceType
         {
