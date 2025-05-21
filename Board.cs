@@ -76,7 +76,7 @@ public class Board
             {
                 if (Grid[i, j] != null)
                 {
-                    Piece piece = new Piece(Grid[i, j]!.pieceType, Grid[i, j]!.x, Grid[i, j]!.y);
+                    Piece piece = Grid[i, j]!.Clone();
                     newBoard.RegisterPiece(piece);
                 }
             }
@@ -93,7 +93,7 @@ public class Board
             {
                 if (targetBoard.Grid[i, j] != null)
                 {
-                    Piece piece = new Piece(targetBoard.Grid[i, j]!.pieceType, targetBoard.Grid[i, j]!.x, targetBoard.Grid[i, j]!.y);
+                    Piece piece = targetBoard.Grid[i, j]!.Clone();
                     RegisterPiece(piece);
                 }
             }

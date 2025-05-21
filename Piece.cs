@@ -12,4 +12,13 @@ public class Piece
         x = inputX;
         y = inputY;
     }
+
+    public Piece Clone()
+    {
+        Piece clone = new Piece(pieceType, x, y);
+        clone.isFrog = this.isFrog;
+        clone.isToad = this.isToad;
+        clone.isLily = this.isLily;
+        return clone;
+    }
 }

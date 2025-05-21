@@ -11,8 +11,8 @@ public class PuzzleGenerator
         board = new Board(inputPieceNum);
     }
 
-    //
     // common
+    //
     private static void Shuffle<T>(List<T> inputList)
     {
         Random rand = new Random(12345);
@@ -32,21 +32,23 @@ public class PuzzleGenerator
     }
 
     private string GetPieceSymbol(string pieceType)
-{
-    return pieceType switch
     {
-        "king" => "K",
-        "queen" => "Q", 
-        "rook" => "R",
-        "bishop" => "B",
-        "knight" => "N",  // 나이트는 N으로 표시
-        "pawn" => "P",
-        "dummy" => "D",
-        _ => "?"
-    };
-}
-    //
+        return pieceType switch
+        {
+            "king" => "K",
+            "queen" => "Q",
+            "rook" => "R",
+            "bishop" => "B",
+            "knight" => "N",  // 나이트는 N으로 표시
+            "pawn" => "P",
+            "dummy" => "D",
+            _ => "?"
+        };
+    }
+
+
     // partition
+    //
     public List<List<int>> GetAllPartitions(int n) // n is target of integer partition
     {
         List<List<int>> result = new List<List<int>>();
@@ -88,8 +90,8 @@ public class PuzzleGenerator
     }
 
 
-    //
     // path
+    //
     private string RandomPieceType() // get random pieceType according to pieceNum rules
     {
         List<string> pieceTypeCandidate = new List<string> { "king", "queen", "rook", "bishop", "knight", "pawn" };
@@ -221,20 +223,19 @@ public class PuzzleGenerator
             Console.WriteLine("\n--- 게임 생성 정보 ---"); // test print
             Console.WriteLine($"선택된 파티션: {string.Join(",", partitions[i])}");
 
-            board = new Board(board.N);
+            Board multiboard = board.Clone();
             List<Move> allPath = new List<Move>();
             List<Vector2Int> padPos = new List<Vector2Int>();
 
             for (int j = 0; j < partitions[i].Count; j++) // for every frog :
             {
                 padPos = GetPadPos(allPath);
-                List<Move> frogPath = GeneratePath(board, partitions[i][j], padPos); // get frog path
-                allPath.AddRange(frogPath);
+                List<Move> frogPath = GeneratePath(multiboard, partitions[i][j], padPos); // get frog path
 
                 // 개구리 경로 정보 출력 (frogPath 획득 후) test print
-                Console.WriteLine($"\n개구리 #{j+1} 정보:");
+                Console.WriteLine($"\n개구리 #{j + 1} 정보:");
                 Console.WriteLine($"- 움직임 수: {partitions[i][j]}");
-                Console.WriteLine($"- 타입: {board.Grid[frogPath[0].f.x, frogPath[0].f.y]!.pieceType}");
+                Console.WriteLine($"- 타입: {multiboard.Grid[frogPath.Last().f.x, frogPath.Last().f.y]!.pieceType}");
                 Console.WriteLine($"- 시작 위치: ({frogPath[0].i.x}, {frogPath[0].i.y})");
                 Console.WriteLine("- 경로:");
                 foreach (Move move in frogPath)
@@ -246,40 +247,41 @@ public class PuzzleGenerator
                 Console.WriteLine("\n릴리패드 정보:"); // test print
                 for (int k = 0; k < padPos.Count; k++) // for every current lily pad :
                 {
-                    List<string> lilyTypeCandidates = PieceTypeCandidates(board);
+                    List<string> lilyTypeCandidates = PieceTypeCandidates(multiboard);
                     Piece lilyPad = new Piece(lilyTypeCandidates[0], padPos[k].x, padPos[k].y); // generate lily pad with random type for now
                     lilyPad.isLily = true;
-                    board.RegisterPiece(lilyPad);
-                    Console.WriteLine($"- 릴리패드 #{k+1}: 타입={lilyPad.pieceType}, 위치=({lilyPad.x}, {lilyPad.y})"); // test print
+                    multiboard.RemovePiece(padPos[k].x, padPos[k].y);
+                    multiboard.RegisterPiece(lilyPad);
+                    Console.WriteLine($"- 릴리패드 #{k + 1}: 타입={lilyPad.pieceType}, 위치=({lilyPad.x}, {lilyPad.y})"); // test print
                 }
 
-                (bool isValid, List<Move> partialSol) = PuzzleSolver(board); // check unique solution
+                (bool isValid, List<Move> partialSol) = PuzzleSolver(multiboard); // check unique solution
 
                 if (!isValid)  // if invalid, check which lily pad moved, and change it, and repeat process until valid board
                 {
                     bool killSwitch = false;
-                    Board CorrectedBoard = new Board(board.N);
+                    Board CorrectedBoard = new Board(multiboard.N);
 
-                    Console.WriteLine($"보드 크기: {board.Size}x{board.Size}");
-                    for (int y = board.Size - 1; y >= 0; y--)
+                    Console.WriteLine($"보드 크기: {multiboard.Size}x{multiboard.Size}"); // test print
+                    for (int y = multiboard.Size - 1; y >= 0; y--)
                     {
-                        for (int x = 0; x < board.Size; x++)
+                        for (int x = 0; x < multiboard.Size; x++)
                         {
-                            if (board.Grid[x, y] != null)
+                            if (multiboard.Grid[x, y] != null)
                             {
-                                string pieceType = board.Grid[x, y]!.pieceType;
+                                string pieceType = multiboard.Grid[x, y]!.pieceType;
                                 string symbol = GetPieceSymbol(pieceType);
-                                
+
                                 // 역할에 따른 색상 추가
-                                if (board.Grid[x, y]!.isFrog)
+                                if (multiboard.Grid[x, y]!.isFrog)
                                     Console.ForegroundColor = ConsoleColor.Green;
-                                else if (board.Grid[x, y]!.isToad)
+                                else if (multiboard.Grid[x, y]!.isToad)
                                     Console.ForegroundColor = ConsoleColor.DarkGreen;
-                                else if (board.Grid[x, y]!.isLily)
+                                else if (multiboard.Grid[x, y]!.isLily)
                                     Console.ForegroundColor = ConsoleColor.Cyan;
                                 else
                                     Console.ForegroundColor = ConsoleColor.White;
-                                    
+
                                 Console.Write($"[{symbol}]");
                                 Console.ResetColor();
                             }
@@ -294,7 +296,8 @@ public class PuzzleGenerator
                     ChangeLilyPadRecur(board, CorrectedBoard, ref killSwitch);
                     if (killSwitch) // if corrected board found
                     {
-                        board.Copy(CorrectedBoard);
+                        multiboard.Copy(CorrectedBoard);
+                        board.Copy(multiboard);
                         return;
                     }
                 }
@@ -306,30 +309,74 @@ public class PuzzleGenerator
     private List<Move> GeneratePath(Board inputBoard, int moveCount, List<Vector2Int> frogOrigins)
     {
         List<Move> path = new List<Move>(); // path of frog
-        List<Move> multiPath = new List<Move>(); // multiverse path of frog
-        List<string> candidates = PieceTypeCandidates(inputBoard);
 
-        for (int i = 0; i < frogOrigins.Count; i++) // for every possible origin :
+        if (inputBoard.CountPieces() == 0) // if first frog :
         {
-            if (board.CountPieces() == 0) origin = frogOrigins[i];
-            for (int j = 0; j < candidates.Count; j++) // for every possible pieceType :
+            for (int i = 0; i < frogOrigins.Count; i++) // for every possible origin :
             {
-                Piece frog = new Piece(candidates[j], frogOrigins[i].x, frogOrigins[i].y);
-                frog.isFrog = true;
-                if (origin.x == frogOrigins[i].x && origin.y == frogOrigins[i].y) frog.isToad = true;
-                board.RegisterPiece(frog);
+                List<string> candidates = PieceTypeCandidates(inputBoard);
+                origin = frogOrigins[i];
 
-                bool killSwitch = false;
-                FindPathRecur(board.Clone(), frog, path, multiPath, moveCount, ref killSwitch);
+                for (int j = 0; j < candidates.Count; j++) // for every possible pieceType :
+                {
+                    path = new List<Move>(); // path of frog
+                    List<Move> multiPath = new List<Move>(); // multiverse path of frog
 
-                if (path.Count() == moveCount) return path;
-                else board.RemovePiece(frog.x, frog.y);
+                    Piece frog = new Piece(candidates[j], frogOrigins[i].x, frogOrigins[i].y);
+                    frog.isFrog = true;
+                    frog.isToad = true;
+                    inputBoard.RegisterPiece(frog);
+
+                    bool killSwitch = false;
+                    Board updatedBoard = FindPathRecur(inputBoard.Clone(), frog, path, multiPath, moveCount, ref killSwitch);
+
+                    if (path.Count() == moveCount)
+                    {
+                        // 최종 상태를 inputBoard에 복사
+                        inputBoard.Copy(updatedBoard);
+                        return path;
+                    }
+                    else
+                    {
+                        inputBoard.RemovePiece(frog.x, frog.y);
+                    }
+                }
             }
         }
+        else // if later frogs :
+        {
+            for (int i = 0; i < frogOrigins.Count; i++) // for every possible origin :
+            {
+                path = new List<Move>(); // path of frog
+                List<Move> multiPath = new List<Move>(); // multiverse path of frog
+
+                Piece frog = inputBoard.Grid[frogOrigins[i].x, frogOrigins[i].y]!;
+                frog.isFrog = true;
+                if (origin.x == frogOrigins[i].x && origin.y == frogOrigins[i].y) frog.isToad = true;
+                frog.isLily = false;
+
+                bool killSwitch = false;
+                Board updatedBoard = FindPathRecur(inputBoard.Clone(), frog, path, multiPath, moveCount, ref killSwitch);
+
+                if (path.Count() == moveCount)
+                {
+                    // 최종 상태를 inputBoard에 복사
+                    inputBoard.Copy(updatedBoard);
+                    return path;
+                }
+                else
+                {
+                    frog.isFrog = false;
+                    if (origin.x == frogOrigins[i].x && origin.y == frogOrigins[i].y) frog.isToad = false;
+                    frog.isLily = true;
+                }
+            }
+        }
+
         return path; // error
     }
 
-    private void FindPathRecur(Board currentBoard, Piece piece, List<Move> solution, List<Move> currentPath, int moveCountLeft, ref bool killSwitch)
+    private Board FindPathRecur(Board currentBoard, Piece piece, List<Move> solution, List<Move> currentPath, int moveCountLeft, ref bool killSwitch)
     {
         if (moveCountLeft == 0) // {recursion escape condition} if done recursion :
         {
@@ -344,17 +391,18 @@ public class PuzzleGenerator
                 }
 
                 (bool isValid, List<Move> sol) = PuzzleSolver(toadBoard);
-                if (!isValid) return;
+                if (!isValid) return currentBoard; // 유효하지 않은 경로
             }
-            board.Copy(currentBoard); // save board
             solution.AddRange(currentPath); // save frog path
             killSwitch = true; // stop further recursion
-            return;
+            return currentBoard; // 최종 보드 상태 반환
         }
 
         List<Move> possibleMoves = currentBoard.GetValidMoves(piece, true);
-        if (possibleMoves.Count == 0) return;
+        if (possibleMoves.Count == 0) return currentBoard; // 가능한 움직임 없음
         Shuffle(possibleMoves);
+
+        Board resultBoard = currentBoard; // 결과를 저장할 보드
 
         foreach (Move move in possibleMoves)
         {
@@ -365,11 +413,19 @@ public class PuzzleGenerator
             currentPath.Add(move);
 
             Piece movedPiece = newBoard.Grid[move.f.x, move.f.y]!;
-            FindPathRecur(newBoard, movedPiece, solution, currentPath, moveCountLeft - 1, ref killSwitch);
-            if (killSwitch) return;
+            Board updatedBoard = FindPathRecur(newBoard, movedPiece, solution, currentPath, moveCountLeft - 1, ref killSwitch);
+
+            if (killSwitch)
+            {
+                resultBoard = updatedBoard; // 성공한 경로의 보드 저장
+                return resultBoard;
+            }
+
             if (currentPath.Count() > 0)  // roll back needed for next move
                 currentPath.RemoveAt(currentPath.Count - 1);
         }
+
+        return resultBoard; // 최종 보드 상태 반환 (성공하지 못했을 경우 원래 상태)
     }
 
     private List<Vector2Int> GetPadPos(List<Move> path) // get pad positions of a frog path
@@ -384,8 +440,8 @@ public class PuzzleGenerator
         }
         else
         {
-            for (int i = 0; i < path.Count(); i++)
-                padPos.Add(path[i].i);
+            for (int index = 0; index < path.Count(); index++)
+                padPos.Add(path[index].i);
         }
 
         Shuffle(padPos);
@@ -393,8 +449,8 @@ public class PuzzleGenerator
     }
 
 
-    //
     // check unique solution
+    //
     public (bool isUniqueSolution, List<Move> solution) PuzzleSolver(Board inputBoard)
     {
         List<Move> solution = new List<Move>(); // answer moveSet
@@ -423,7 +479,6 @@ public class PuzzleGenerator
                 endingPos.Add(new Vector2Int(lastPiece.x, lastPiece.y));
                 killSwitch = true;
             }
-            moveSet.Clear(); // reset moveSet
             return;
         }
 
@@ -517,7 +572,8 @@ public class PuzzleGenerator
         }
     }
 
-    //
+
     // result
+    //
 
 }
