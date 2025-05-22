@@ -99,7 +99,7 @@ public class Board
             }
         }
     }
-    
+
     public Piece GetLastPiece()
     {
         Piece piece = new Piece("dummy", -1, -1);
