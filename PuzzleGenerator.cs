@@ -154,6 +154,36 @@ public class PuzzleGenerator
     //
     public void GenerateGame()
     {
+        Vector2Int generatedPiecePos = new Vector2Int(-1, -1);
+        Piece generatedPiece = new Piece("dummy", -1, -1); // initialize generatedPiece
+        Piece movingPiece = new Piece("dummy", -1, -1); // initialize movingPiece
+        
+        for (int moveCount = 1; moveCount < gameBoard.N; moveCount++) // for every move count
+        {
+            bool isValid1 = false;
+            bool isValid2 = false;
+
+            if (moveCount == 1) // if first move, piecePos is everywhere
+            {
+                for (int y = 0; y < gameBoard.Size; y++)
+                    for (int x = 0; x < gameBoard.Size; x++)
+                        piecePos.Add(new Vector2Int(x, y));
+                
+            }
+
+            foreach (string typeCandidate in PieceTypeCandidates(gameBoard)) // for every piece type candidate
+            {
+                generatedPiece.pieceType = typeCandidate; // render pieceType
+
+                // if this isn't last piece and no possible move, continue
+                if (moveCount != gameBoard.N - 1 && gameBoard.GetAllValidMoves(true).Count == 0) continue;
+
+                (isValid2, List<Move> partialSol2) = PuzzleSolver(gameBoard);
+
+                if (isValid2) break; // if valid, move on
+            }
+        }
+        /*
         List<Vector2Int> piecePos = new List<Vector2Int>(); // positions of pieces
         Piece movingPiece = new Piece("dummy", -1, -1); // initialize movingPiece
 
@@ -242,7 +272,7 @@ public class PuzzleGenerator
                     break;
                 }
             }
-        }
+        }*/
     }
     
 }
