@@ -261,7 +261,7 @@ public class Board
         return moves;
     }
 
-    public List<Move> GetAllValidMoves() // GetValidMoves() for all pieces on board
+    public List<Move> GetAllValidMoves(bool backwards = false) // GetValidMoves() for all pieces on board
     {
         var allMoves = new List<Move>();
 
@@ -272,7 +272,7 @@ public class Board
                 if (Grid[i, j] != null)
                 {
                     Piece piece = Grid[i, j]!;
-                    var moves = GetValidMoves(piece);
+                    var moves = GetValidMoves(piece, backwards);
                     foreach (var move in moves)
                         allMoves.Add(move);
                 }

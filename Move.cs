@@ -7,4 +7,9 @@ public class Move
         i = inputI;
         f = inputF;
     }
+
+    public Move reverseMove()
+    {
+        return new Move(f, i);
+    }
 }
