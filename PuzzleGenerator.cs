@@ -14,180 +14,27 @@ public class PuzzleGenerator
         stopwatch = new System.Diagnostics.Stopwatch();
     }
 
-    // miscel
-    //
-    private void Shuffle<T>(List<T> inputList)
-    {
-        Random rand = new Random(seed);
-
-        for (int i = inputList.Count - 1; i > 0; i--) // Fisher-Yates shuffle
-        {
-            int k = rand.Next(i + 1);
-            T value = inputList[k];
-            inputList[k] = inputList[i];
-            inputList[i] = value;
-        }
-    }
-
-    public Board getGameBoard()
-    {
-        return gameBoard;
-    }
-
-    private void PrintBoard(Board inputBoard)
-    {
-        Console.WriteLine("\n--- 현재 보드 ---\n");
-
-        for (int y = inputBoard.Size - 1; y >= 0; y--)
-        {
-            // 행 인덱스 표시
-            Console.Write($"{y} ");
-
-            for (int x = 0; x < inputBoard.Size; x++)
-            {
-                if (inputBoard.Grid[x, y] != null)
-                {
-                    string symbol = inputBoard.Grid[x, y]!.pieceType;
-
-                    symbol = symbol switch
-                    {
-                        "king" => "K",
-                        "queen" => "Q",
-                        "rook" => "R",
-                        "bishop" => "B",
-                        "knight" => "N",
-                        "pawn" => "P",
-                        "dummy" => "D",
-                        _ => "?"
-                    };
-
-                    Console.Write($"[{symbol}]");
-                    Console.ResetColor();
-                }
-                else Console.Write("[ ]");
-            }
-            Console.WriteLine();
-        }
-
-        // 열 인덱스 표시
-        Console.Write("  ");
-        for (int x = 0; x < inputBoard.Size; x++)
-        {
-            Console.Write($" {x} ");
-        }
-        Console.WriteLine();
-    }
-
-    private void PrintReport()
-    {
-        Console.WriteLine($"seed : {seed}");
-        Console.WriteLine($"time : {stopwatch.Elapsed.TotalSeconds:F2}s");
-
-        Console.WriteLine("solution : ");
-        for (int i = solution.Count - 1; i >= 0; i--)
-        {
-            Move move = solution[i];
-            Console.WriteLine($"  {solution.Count - i}. ({move.f.x},{move.f.y}) → ({move.i.x},{move.i.y})");
-        }
-    }
-
-    private List<string> PieceTypeCandidates(Board inputBoard) // get candidates of pieceType for current board
-    {
-        List<string> candidates = new List<string> { "king", "queen", "rook", "bishop", "knight", "pawn" };
-
-        if (inputBoard.N >= 4 && inputBoard.N <= 10)
-        {
-            if (inputBoard.CountPiece("king") >= 1) candidates.Remove("king");
-            if (inputBoard.CountPiece("queen") >= 1) candidates.Remove("queen");
-            if (inputBoard.CountPiece("rook") >= 2) candidates.Remove("rook");
-            if (inputBoard.CountPiece("bishop") >= 2) candidates.Remove("bishop");
-            if (inputBoard.CountPiece("knight") >= 2) candidates.Remove("knight");
-            if (inputBoard.CountPiece("pawn") >= 2) candidates.Remove("pawn");
-        }
-        else // else if (board.N == 11)
-        {
-            if (inputBoard.CountPiece("king") >= 1) candidates.Remove("king");
-            if (inputBoard.CountPiece("queen") >= 2) candidates.Remove("queen");
-            if (inputBoard.CountPiece("rook") >= 4) candidates.Remove("rook");
-            if (inputBoard.CountPiece("bishop") >= 4) candidates.Remove("bishop");
-            if (inputBoard.CountPiece("knight") >= 4) candidates.Remove("knight");
-            if (inputBoard.CountPiece("pawn") >= 5) candidates.Remove("pawn");
-        }
-
-        Shuffle(candidates);
-        return candidates;
-    }
-
-    // check unique solution
-    //
-    public (bool isUniqueSolution, List<Move> solution) PuzzleSolver(Board inputBoard)
-    {
-        List<Move> solution = new List<Move>(); // answer moveSet
-        List<Move> moveSet = new List<Move>(); // multiverse board moveSet
-        List<Vector2Int> endingPos = new List<Vector2Int>();
-        bool killSwitch = false;
-
-        CheckBoardRecur(inputBoard, solution, moveSet, endingPos, ref killSwitch);
-
-        return (endingPos.Count == 1, solution);
-    }
-
-    private void CheckBoardRecur(Board currentBoard, List<Move> solution, List<Move> moveSet, List<Vector2Int> endingPos, ref bool killSwitch)
-    {
-        if (currentBoard.CountPieces() == 1)
-        {
-            Piece lastPiece = currentBoard.GetLastPiece(); // need to check ending position
-
-            if (endingPos.Count == 0) // get first solution
-            {
-                endingPos.Add(new Vector2Int(lastPiece.x, lastPiece.y));
-                solution.AddRange(moveSet);
-            }
-            else if (lastPiece.x != endingPos[0].x || lastPiece.y != endingPos[0].y) // if different ending, killSwitch on
-            {
-                endingPos.Add(new Vector2Int(lastPiece.x, lastPiece.y));
-                killSwitch = true;
-            }
-            return;
-        }
-
-        List<Move> allValidMoves = currentBoard.GetAllValidMoves();
-
-        if (allValidMoves.Count == 0) return;// dead end
-
-        foreach (Move move in allValidMoves) // try all possible moves
-        {
-            Board newBoard = currentBoard.Clone();
-            newBoard.ExecuteMove(move);
-            moveSet.Add(move);
-            CheckBoardRecur(newBoard, solution, moveSet, endingPos, ref killSwitch);
-            if (killSwitch) return;
-            if (moveSet.Count > 0) // roll back needed for next move
-                moveSet.RemoveAt(moveSet.Count - 1);
-        }
-    }
-
     // produce result
-    //
     public void GenerateGame()
-{
-    Console.WriteLine($"Seed: {seed}");
-    stopwatch.Start();
-    
-    // 첫 번째 기물부터 시작
-    if (GenerateGameRecursive(0))
     {
-        stopwatch.Stop();
-        PrintBoard(gameBoard);
-        PrintReport();
-    }
-    else
-    {
-        stopwatch.Stop();
-        Console.WriteLine("퍼즐 생성 실패!");
-    }
-}
+        Console.WriteLine($"Seed: {seed}");
+        stopwatch.Start();
 
+        // 첫 번째 기물부터 시작
+        if (GenerateGameRecursive(0))
+        {
+            stopwatch.Stop();
+            PrintBoard(gameBoard);
+            PrintReport();
+        }
+        else
+        {
+            stopwatch.Stop();
+            Console.WriteLine("퍼즐 생성 실패!");
+        }
+    }
+
+    // functions for game and piece
     private bool GenerateGameRecursive(int currentPieceCount)
     {
         // 모든 기물을 성공적으로 배치했으면 완료
@@ -309,4 +156,150 @@ public class PuzzleGenerator
 
         return false;
     }
+
+    // check unique solution
+    private (bool isUniqueSolution, List<Move> foundSolution) PuzzleSolver(Board inputBoard)
+    {
+        List<Move> foundSolution = new List<Move>(); // answer moveSet
+        List<Move> moveSet = new List<Move>(); // multiverse board moveSet
+        List<Vector2Int> endingPos = new List<Vector2Int>();
+        bool killSwitch = false;
+
+        CheckBoardRecur(inputBoard, foundSolution, moveSet, endingPos, ref killSwitch);
+
+        return (endingPos.Count == 1, foundSolution);
+    }
+
+    private void CheckBoardRecur(Board currentBoard, List<Move> solution, List<Move> moveSet, List<Vector2Int> endingPos, ref bool killSwitch)
+    {
+        if (currentBoard.CountPieces() == 1)
+        {
+            Piece lastPiece = currentBoard.GetLastPiece(); // need to check ending position
+
+            if (endingPos.Count == 0) // get first solution
+            {
+                endingPos.Add(new Vector2Int(lastPiece.x, lastPiece.y));
+                solution.AddRange(moveSet);
+            }
+            else if (lastPiece.x != endingPos[0].x || lastPiece.y != endingPos[0].y) // if different ending, killSwitch on
+            {
+                endingPos.Add(new Vector2Int(lastPiece.x, lastPiece.y));
+                killSwitch = true;
+            }
+            return;
+        }
+
+        List<Move> allValidMoves = currentBoard.GetAllValidMoves();
+
+        if (allValidMoves.Count == 0) return;// dead end
+
+        foreach (Move move in allValidMoves) // try all possible moves
+        {
+            Board newBoard = currentBoard.Clone();
+            newBoard.ExecuteMove(move);
+            moveSet.Add(move);
+            CheckBoardRecur(newBoard, solution, moveSet, endingPos, ref killSwitch);
+            if (killSwitch) return;
+            if (moveSet.Count > 0) // roll back needed for next move
+                moveSet.RemoveAt(moveSet.Count - 1);
+        }
+    }
+
+    // print on terminal
+    private void PrintBoard(Board inputBoard)
+    {
+        Console.WriteLine("\n--- 현재 보드 ---\n");
+
+        for (int y = inputBoard.Size - 1; y >= 0; y--)
+        {
+            // 행 인덱스 표시
+            Console.Write($"{y} ");
+
+            for (int x = 0; x < inputBoard.Size; x++)
+            {
+                if (inputBoard.Grid[x, y] != null)
+                {
+                    string symbol = inputBoard.Grid[x, y]!.pieceType;
+
+                    symbol = symbol switch
+                    {
+                        "king" => "K",
+                        "queen" => "Q",
+                        "rook" => "R",
+                        "bishop" => "B",
+                        "knight" => "N",
+                        "pawn" => "P",
+                        "dummy" => "D",
+                        _ => "?"
+                    };
+
+                    Console.Write($"[{symbol}]");
+                    Console.ResetColor();
+                }
+                else Console.Write("[ ]");
+            }
+            Console.WriteLine();
+        }
+
+        // 열 인덱스 표시
+        Console.Write("  ");
+        for (int x = 0; x < inputBoard.Size; x++)
+        {
+            Console.Write($" {x} ");
+        }
+        Console.WriteLine();
+    }
+
+    private void PrintReport()
+    {
+        Console.WriteLine($"seed : {seed}");
+        Console.WriteLine($"time : {stopwatch.Elapsed.TotalSeconds:F2}s");
+
+        Console.WriteLine("solution : ");
+        for (int i = solution.Count - 1; i >= 0; i--)
+        {
+            Move move = solution[i];
+            Console.WriteLine($"  {solution.Count - i}. ({move.f.x},{move.f.y}) → ({move.i.x},{move.i.y})");
+        }
+    }
+
+    private List<string> PieceTypeCandidates(Board inputBoard) // get candidates of pieceType for current board
+    {
+        List<string> candidates = new List<string> { "king", "queen", "rook", "bishop", "knight", "pawn" };
+
+        if (inputBoard.N >= 4 && inputBoard.N <= 10)
+        {
+            if (inputBoard.CountPiece("king") >= 1) candidates.Remove("king");
+            if (inputBoard.CountPiece("queen") >= 1) candidates.Remove("queen");
+            if (inputBoard.CountPiece("rook") >= 2) candidates.Remove("rook");
+            if (inputBoard.CountPiece("bishop") >= 2) candidates.Remove("bishop");
+            if (inputBoard.CountPiece("knight") >= 2) candidates.Remove("knight");
+            if (inputBoard.CountPiece("pawn") >= 2) candidates.Remove("pawn");
+        }
+        else // else if (board.N == 11)
+        {
+            if (inputBoard.CountPiece("king") >= 1) candidates.Remove("king");
+            if (inputBoard.CountPiece("queen") >= 2) candidates.Remove("queen");
+            if (inputBoard.CountPiece("rook") >= 4) candidates.Remove("rook");
+            if (inputBoard.CountPiece("bishop") >= 4) candidates.Remove("bishop");
+            if (inputBoard.CountPiece("knight") >= 4) candidates.Remove("knight");
+            if (inputBoard.CountPiece("pawn") >= 5) candidates.Remove("pawn");
+        }
+
+        Shuffle(candidates);
+        return candidates;
+    }
+
+    // miscel
+    private void Shuffle<T>(List<T> inputList)
+    {
+        for (int i = inputList.Count - 1; i > 0; i--) // Fisher-Yates shuffle
+        {
+            int k = this.rand.Next(i + 1);
+            T value = inputList[k];
+            inputList[k] = inputList[i];
+            inputList[i] = value;
+        }
+    }
+
 }

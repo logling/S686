@@ -27,18 +27,6 @@ public class Board
         Grid[x, y] = null;
     }
 
-    public void ClearBoard()
-    {
-        for (int i = 0; i < Size; i++)
-        {
-            for (int j = 0; j < Size; j++)
-            {
-                if (Grid[i, j] != null)
-                    RemovePiece(i, j);
-            }
-        }
-    }
-
     public bool IsWithinBounds(int x, int y)
     {
         return x >= 0 && x < Size && y >= 0 && y < Size;
@@ -82,22 +70,6 @@ public class Board
             }
         }
         return newBoard;
-    }
-
-    public void Copy(Board targetBoard)
-    {
-        ClearBoard();
-        for (int i = 0; i < Size; i++)
-        {
-            for (int j = 0; j < Size; j++)
-            {
-                if (targetBoard.Grid[i, j] != null)
-                {
-                    Piece piece = targetBoard.Grid[i, j]!.Clone();
-                    RegisterPiece(piece);
-                }
-            }
-        }
     }
 
     public Piece GetLastPiece()
