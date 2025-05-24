@@ -1,13 +1,17 @@
 public class PuzzleGenerator
 {
-    int seed = 9;
+    int seed = Environment.TickCount;
+    // int seed = 223814843;
     Random rand;
     private Board gameBoard;
+    private List<Move> solution = new List<Move>();
+    private System.Diagnostics.Stopwatch stopwatch;
 
     public PuzzleGenerator(int inputPieceNum)
     {
-        gameBoard = new Board(inputPieceNum);
         rand = new Random(seed);
+        gameBoard = new Board(inputPieceNum);
+        stopwatch = new System.Diagnostics.Stopwatch();
     }
 
     // miscel
@@ -30,7 +34,7 @@ public class PuzzleGenerator
         return gameBoard;
     }
 
-    private void PrintCurrentBoard(Board inputBoard)
+    private void PrintBoard(Board inputBoard)
     {
         Console.WriteLine("\n--- 현재 보드 ---\n");
 
@@ -72,6 +76,19 @@ public class PuzzleGenerator
             Console.Write($" {x} ");
         }
         Console.WriteLine();
+    }
+
+    private void PrintReport()
+    {
+        Console.WriteLine($"seed : {seed}");
+        Console.WriteLine($"time : {stopwatch.Elapsed.TotalSeconds:F2}s");
+
+        Console.WriteLine("solution : ");
+        for (int i = solution.Count - 1; i >= 0; i--)
+        {
+            Move move = solution[i];
+            Console.WriteLine($"  {solution.Count - i}. ({move.f.x},{move.f.y}) → ({move.i.x},{move.i.y})");
+        }
     }
 
     private List<string> PieceTypeCandidates(Board inputBoard) // get candidates of pieceType for current board
@@ -153,126 +170,143 @@ public class PuzzleGenerator
     // produce result
     //
     public void GenerateGame()
+{
+    Console.WriteLine($"Seed: {seed}");
+    stopwatch.Start();
+    
+    // 첫 번째 기물부터 시작
+    if (GenerateGameRecursive(0))
     {
-        Vector2Int generatedPiecePos = new Vector2Int(-1, -1);
-        Piece generatedPiece = new Piece("dummy", -1, -1); // initialize generatedPiece
-        Piece movingPiece = new Piece("dummy", -1, -1); // initialize movingPiece
-        
-        for (int moveCount = 1; moveCount < gameBoard.N; moveCount++) // for every move count
+        stopwatch.Stop();
+        PrintBoard(gameBoard);
+        PrintReport();
+    }
+    else
+    {
+        stopwatch.Stop();
+        Console.WriteLine("퍼즐 생성 실패!");
+    }
+}
+
+    private bool GenerateGameRecursive(int currentPieceCount)
+    {
+        // 모든 기물을 성공적으로 배치했으면 완료
+        if (currentPieceCount == gameBoard.N)
         {
-            bool isValid1 = false;
-            bool isValid2 = false;
+            // 마지막 검증
+            var (isValid, _) = PuzzleSolver(gameBoard);
+            return isValid;
+        }
 
-            if (moveCount == 1) // if first move, piecePos is everywhere
+        // 현재 상태 출력 (디버깅용)
+        if (currentPieceCount > 0)
+            PrintBoard(gameBoard);
+
+        // 첫 번째 기물 배치
+        if (currentPieceCount == 0)
+        {
+            return PlaceFirstPiece();
+        }
+
+        // 두 번째 이후 기물들 배치
+        return PlaceNextPiece(currentPieceCount);
+    }
+
+    private bool PlaceFirstPiece()
+    {
+        List<Vector2Int> allPositions = new List<Vector2Int>();
+        for (int y = 0; y < gameBoard.Size; y++)
+            for (int x = 0; x < gameBoard.Size; x++)
+                allPositions.Add(new Vector2Int(x, y));
+        Shuffle(allPositions);
+
+        foreach (string pieceType in PieceTypeCandidates(gameBoard))
+        {
+            List<Vector2Int> positions = new List<Vector2Int>(allPositions);
+
+            // Pawn은 첫 번째 줄에 놓을 수 없음
+            if (pieceType == "pawn")
+                positions.RemoveAll(pos => pos.y == 0);
+
+            foreach (var pos in positions)
             {
-                for (int y = 0; y < gameBoard.Size; y++)
-                    for (int x = 0; x < gameBoard.Size; x++)
-                        piecePos.Add(new Vector2Int(x, y));
-                
-            }
+                Piece piece = new Piece(pieceType, pos.x, pos.y);
+                gameBoard.RegisterPiece(piece);
 
-            foreach (string typeCandidate in PieceTypeCandidates(gameBoard)) // for every piece type candidate
-            {
-                generatedPiece.pieceType = typeCandidate; // render pieceType
+                var (isValid, _) = PuzzleSolver(gameBoard);
+                if (isValid)
+                {
+                    // 다음 기물 배치 시도
+                    if (GenerateGameRecursive(1))
+                        return true;
+                }
 
-                // if this isn't last piece and no possible move, continue
-                if (moveCount != gameBoard.N - 1 && gameBoard.GetAllValidMoves(true).Count == 0) continue;
-
-                (isValid2, List<Move> partialSol2) = PuzzleSolver(gameBoard);
-
-                if (isValid2) break; // if valid, move on
+                // 실패했으면 제거하고 다음 시도
+                gameBoard.RemovePiece(pos.x, pos.y);
             }
         }
-        /*
-        List<Vector2Int> piecePos = new List<Vector2Int>(); // positions of pieces
-        Piece movingPiece = new Piece("dummy", -1, -1); // initialize movingPiece
 
-        for (int moveCount = 1; moveCount < gameBoard.N; moveCount++) // for every move count
-        {
-            bool isValid1 = false;
-            bool isValid2 = false;
-            
-            if (moveCount == 1) // if first move, piecePos is everywhere
-            {
-                for (int y = 0; y < gameBoard.Size; y++)
-                    for (int x = 0; x < gameBoard.Size; x++)
-                        piecePos.Add(new Vector2Int(x, y));
-            }
-
-            Piece generatedPiece = new Piece("dummy", -1, -1); // initialize generatedPiece
-
-            Shuffle(piecePos);
-            foreach (Vector2Int pos in piecePos.ToList()) // for every piece position
-            {
-                if (moveCount == 1) // if first move, generate new piece
-                {
-                    foreach (string typeCandidate in PieceTypeCandidates(gameBoard))
-                    {
-                        movingPiece = new Piece(typeCandidate, pos.x, pos.y);
-
-                        if (movingPiece.pieceType == "pawn" && gameBoard.GetValidMoves(movingPiece, true).Count == 0)
-                        {
-                            continue;
-                        }
-                        else
-                        {
-                            gameBoard.RegisterPiece(movingPiece);
-                            piecePos.Clear(); // update piecePos
-                            piecePos.Add(new Vector2Int(pos.x, pos.y));
-                            PrintCurrentBoard(gameBoard); // test print
-                            break;
-                        }
-                    }
-                }
-                else
-                    movingPiece = gameBoard.Grid[pos.x, pos.y]!;
-
-                List<Move> validMoves = gameBoard.GetValidMoves(movingPiece, true);
-                if (validMoves.Count == 0) continue;
-
-                Shuffle(validMoves);
-                foreach (Move move in validMoves) // for every possible move of movingPiece
-                {
-                    gameBoard.ExecuteMove(move); // execute move
-
-                    generatedPiece.x = move.i.x; // place generatedPiece at initial position
-                    generatedPiece.y = move.i.y;
-                    gameBoard.RegisterPiece(generatedPiece);
-
-                    (isValid1, List<Move> partialSol1) = PuzzleSolver(gameBoard); // check validity of path
-
-                    if (!isValid1) // if not valid, wrong move, so continue next move
-                    {
-                        gameBoard.ExecuteMove(move.reverseMove()); // reverse move
-                    }
-                    else  // if valid, move on to change dummy
-                    {
-                        piecePos.Add(move.f); // update piecePos
-                        break;
-                    }
-                }
-
-                if (!isValid1) continue;
-
-                foreach (string typeCandidate in PieceTypeCandidates(gameBoard)) // for every piece type candidate
-                {
-                    generatedPiece.pieceType = typeCandidate; // render pieceType
-
-                    // if this isn't last piece and no possible move, continue
-                    if (moveCount != gameBoard.N - 1 && gameBoard.GetAllValidMoves(true).Count == 0) continue;
-
-                    (isValid2, List<Move> partialSol2) = PuzzleSolver(gameBoard);
-
-                    if (isValid2) break; // if valid, move on
-                }
-
-                if (isValid2)
-                {
-                    PrintCurrentBoard(gameBoard); // test print
-                    break;
-                }
-            }
-        }*/
+        return false;
     }
-    
+
+    private bool PlaceNextPiece(int currentPieceCount)
+    {
+        // 현재 보드의 모든 기물 위치 수집
+        List<Vector2Int> piecePositions = new List<Vector2Int>();
+        for (int y = 0; y < gameBoard.Size; y++)
+            for (int x = 0; x < gameBoard.Size; x++)
+                if (gameBoard.Grid[x, y] != null)
+                    piecePositions.Add(new Vector2Int(x, y));
+
+        // 각 기물을 움직여보기
+        foreach (var pos in piecePositions)
+        {
+            Piece movingPiece = gameBoard.Grid[pos.x, pos.y]!;
+            List<Move> validMoves = gameBoard.GetValidMoves(movingPiece, true);
+            Shuffle(validMoves);
+
+            foreach (Move move in validMoves)
+            {
+                // 이동 실행
+                gameBoard.ExecuteMove(move);
+
+                // 빈 자리에 새 기물 시도
+                foreach (string pieceType in PieceTypeCandidates(gameBoard))
+                {
+                    Piece newPiece = new Piece(pieceType, move.i.x, move.i.y);
+                    gameBoard.RegisterPiece(newPiece);
+
+                    // 마지막 기물이 아니면 backwards 이동 가능해야 함
+                    if (currentPieceCount < gameBoard.N - 1 &&
+                        gameBoard.GetAllValidMoves(true).Count == 0)
+                    {
+                        gameBoard.RemovePiece(move.i.x, move.i.y);
+                        continue;
+                    }
+
+                    var (isValid, _) = PuzzleSolver(gameBoard);
+                    if (isValid)
+                    {
+                        // solution에 이동 추가
+                        solution.Add(move);
+
+                        // 다음 기물 배치 시도
+                        if (GenerateGameRecursive(currentPieceCount + 1))
+                            return true;
+
+                        // 실패했으면 solution에서 제거
+                        solution.RemoveAt(solution.Count - 1);
+                    }
+
+                    // 새 기물 제거
+                    gameBoard.RemovePiece(move.i.x, move.i.y);
+                }
+
+                // 이동 되돌리기
+                gameBoard.ExecuteMove(move.reverseMove());
+            }
+        }
+
+        return false;
+    }
 }
