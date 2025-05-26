@@ -1,10 +1,7 @@
 public class Piece
 {
     public string pieceType; // type like king or pawn or knight
-    public int x, y;
-    public bool isFrog;
-    public bool isToad;
-    public bool isLily;
+    public int x, y; // 0 ~ 5, maybe 6 7
 
     public Piece(string type, int inputX, int inputY)
     {
@@ -13,12 +10,9 @@ public class Piece
         y = inputY;
     }
 
-    public Piece Clone()
+    public Piece Clone() // clone piece
     {
         Piece clone = new Piece(pieceType, x, y);
-        clone.isFrog = this.isFrog;
-        clone.isToad = this.isToad;
-        clone.isLily = this.isLily;
         return clone;
     }
 }

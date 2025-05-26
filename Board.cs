@@ -17,17 +17,17 @@ public class Board
         Grid = new Piece?[Size, Size];
     }
 
-    public void RegisterPiece(Piece piece)
+    public void RegisterPiece(Piece piece) // register piece in Grid
     {
         Grid[piece.x, piece.y] = piece;
     }
 
-    public void RemovePiece(int x, int y)
+    public void RemovePiece(int x, int y) // remove piece from Grid
     {
         Grid[x, y] = null;
     }
 
-    public bool IsWithinBounds(int x, int y)
+    public bool IsWithinBounds(int x, int y) // check if position within boundary
     {
         return x >= 0 && x < Size && y >= 0 && y < Size;
     }
@@ -54,7 +54,7 @@ public class Board
         return count;
     }
 
-    public Board Clone()
+    public Board Clone() // clone board
     {
         Board newBoard = new Board(N);
 
@@ -72,7 +72,7 @@ public class Board
         return newBoard;
     }
 
-    public Piece GetLastPiece()
+    public Piece GetLastPiece() // if 1 piece, get it
     {
         Piece piece = new Piece("dummy", -1, -1);
 
@@ -90,8 +90,8 @@ public class Board
         return piece;
     }
 
-    public void ExecuteMove(Move move) // works when target either exists or not
-    {
+    public void ExecuteMove(Move move) // move piece
+    { // works when target either exists or not
         Piece piece = Grid[move.i.x, move.i.y]!;
         RemovePiece(move.i.x, move.i.y);
         RemovePiece(move.f.x, move.f.y);
@@ -100,7 +100,7 @@ public class Board
         RegisterPiece(piece);
     }
 
-    public List<Move> GetValidMoves(Piece piece, bool backwards = false) // get valid moves of a piece on board.
+    public List<Move> GetValidMoves(Piece piece, bool backwards = false) // get valid moves of a piece on board
     { // if backwards false, piece takes
         List<Move> moves = new List<Move>();
 
@@ -234,7 +234,7 @@ public class Board
     }
 
     public List<Move> GetAllValidMoves(bool backwards = false) // GetValidMoves() for all pieces on board
-    {
+    { // if backwards false, piece takes
         var allMoves = new List<Move>();
 
         for (int i = 0; i < Size; i++)
