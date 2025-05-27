@@ -2,7 +2,7 @@
 {
     static void Main()
     {
-        PuzzleGenerator p = new PuzzleGenerator(4);
-        p.GenerateGame();
+        PuzzleGenerator p = new PuzzleGenerator();
+        p.GenerateGame(4);
     }
 }

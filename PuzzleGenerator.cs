@@ -11,16 +11,17 @@ public class PuzzleGenerator
     private HashSet<BoardKey> validBoards = new HashSet<BoardKey>(); // memoization
     private System.Diagnostics.Stopwatch stopwatch; // used to time process
 
-    public PuzzleGenerator(int inputPieceNum)
+    public PuzzleGenerator()
     {
         rand = new Random(seed);
-        gameBoard = new Board(inputPieceNum);
+        gameBoard = new Board(4);
         stopwatch = new System.Diagnostics.Stopwatch();
     }
 
     // produce result
-    public void GenerateGame() // generate puzzle and print report
+    public void GenerateGame(int inputPieceNum) // generate puzzle and print report
     {
+        gameBoard = new Board(inputPieceNum);
         validBoards = new HashSet<BoardKey>();
         puzzleGenerated = false;
 
@@ -177,7 +178,7 @@ public class PuzzleGenerator
         BoardKey boardKey = GetBoardKey(currentBoard);
         if (validBoards.Contains(boardKey)) // memoization magic
             return;
-            
+
         if (currentBoard.CountPieces() == 1) // if reached end,
         {
             Piece lastPiece = currentBoard.GetLastPiece(); // need to check ending position
@@ -262,95 +263,6 @@ public class PuzzleGenerator
         }
 
         // PrintValidBoards();
-    }
-
-    private void PrintBoard(Board inputBoard)
-    {
-        Console.WriteLine("\n--- 현재 보드 ---\n");
-
-        for (int y = inputBoard.Size - 1; y >= 0; y--)
-        {
-            // 행 인덱스 표시
-            Console.Write($"{y} ");
-
-            for (int x = 0; x < inputBoard.Size; x++)
-            {
-                if (inputBoard.Grid[x, y] != null)
-                {
-                    string symbol = inputBoard.Grid[x, y]!.pieceType;
-
-                    symbol = symbol switch
-                    {
-                        "king" => "K",
-                        "queen" => "Q",
-                        "rook" => "R",
-                        "bishop" => "B",
-                        "knight" => "N",
-                        "pawn" => "P",
-                        "dummy" => "D",
-                        _ => "?"
-                    };
-
-                    Console.Write($"[{symbol}]");
-                    Console.ResetColor();
-                }
-                else Console.Write("[ ]");
-            }
-            Console.WriteLine();
-        }
-
-        // 열 인덱스 표시
-        Console.Write("  ");
-        for (int x = 0; x < inputBoard.Size; x++)
-        {
-            Console.Write($" {x} ");
-        }
-        Console.WriteLine();
-    }
-
-    private void PrintValidBoards()
-    {
-        Console.WriteLine("\n=== Valid Boards ===");
-        List<BoardKey> validBoardsList = validBoards.ToList();
-        for (int boardGroup = 0; boardGroup < validBoards.Count; boardGroup += 4)
-        {
-            List<Board> currentBoards = new List<Board>();
-            for (int i = 0; i < 4 && boardGroup + i < validBoards.Count; i++)
-            {
-                currentBoards.Add(BoardKeyToBoard(validBoardsList[boardGroup + i]));
-            }
-
-            for (int y = gameBoard.Size - 1; y >= 0; y--)
-            {
-                for (int boardIndex = 0; boardIndex < currentBoards.Count; boardIndex++)
-                {
-                    Board board = currentBoards[boardIndex];
-
-                    for (int x = 0; x < board.Size; x++)
-                    {
-                        if (board.Grid[x, y] != null)
-                        {
-                            string symbol = board.Grid[x, y]!.pieceType switch
-                            {
-                                "king" => "K",
-                                "queen" => "Q",
-                                "rook" => "R",
-                                "bishop" => "B",
-                                "knight" => "N",
-                                "pawn" => "P",
-                                _ => "?"
-                            };
-                            Console.Write($"[{symbol}]");
-                        }
-                        else Console.Write("[ ]");
-                    }
-
-                    if (boardIndex < currentBoards.Count - 1) Console.Write("   ");
-                }
-                Console.WriteLine();
-            }
-            Console.WriteLine();
-        }
     }
 
     // boardKey
@@ -473,6 +385,100 @@ public class PuzzleGenerator
             T value = inputList[k];
             inputList[k] = inputList[i];
             inputList[i] = value;
+        }
+    }
+
+    public Board GetBoard()
+    {
+        return gameBoard.Clone();
+    }
+
+    public void PrintBoard(Board inputBoard)
+    {
+        Console.WriteLine("\n--- 현재 보드 ---\n");
+
+        for (int y = inputBoard.Size - 1; y >= 0; y--)
+        {
+            // 행 인덱스 표시
+            Console.Write($"{y} ");
+
+            for (int x = 0; x < inputBoard.Size; x++)
+            {
+                if (inputBoard.Grid[x, y] != null)
+                {
+                    string symbol = inputBoard.Grid[x, y]!.pieceType;
+
+                    symbol = symbol switch
+                    {
+                        "king" => "K",
+                        "queen" => "Q",
+                        "rook" => "R",
+                        "bishop" => "B",
+                        "knight" => "N",
+                        "pawn" => "P",
+                        "dummy" => "D",
+                        _ => "?"
+                    };
+
+                    Console.Write($"[{symbol}]");
+                    Console.ResetColor();
+                }
+                else Console.Write("[ ]");
+            }
+            Console.WriteLine();
+        }
+
+        // 열 인덱스 표시
+        Console.Write("  ");
+        for (int x = 0; x < inputBoard.Size; x++)
+        {
+            Console.Write($" {x} ");
+        }
+        Console.WriteLine();
+    }
+
+    private void PrintValidBoards()
+    {
+        Console.WriteLine("\n=== Valid Boards ===");
+        List<BoardKey> validBoardsList = validBoards.ToList();
+        for (int boardGroup = 0; boardGroup < validBoards.Count; boardGroup += 4)
+        {
+            List<Board> currentBoards = new List<Board>();
+            for (int i = 0; i < 4 && boardGroup + i < validBoards.Count; i++)
+            {
+                currentBoards.Add(BoardKeyToBoard(validBoardsList[boardGroup + i]));
+            }
+
+            for (int y = gameBoard.Size - 1; y >= 0; y--)
+            {
+                for (int boardIndex = 0; boardIndex < currentBoards.Count; boardIndex++)
+                {
+                    Board board = currentBoards[boardIndex];
+
+                    for (int x = 0; x < board.Size; x++)
+                    {
+                        if (board.Grid[x, y] != null)
+                        {
+                            string symbol = board.Grid[x, y]!.pieceType switch
+                            {
+                                "king" => "K",
+                                "queen" => "Q",
+                                "rook" => "R",
+                                "bishop" => "B",
+                                "knight" => "N",
+                                "pawn" => "P",
+                                _ => "?"
+                            };
+                            Console.Write($"[{symbol}]");
+                        }
+                        else Console.Write("[ ]");
+                    }
+
+                    if (boardIndex < currentBoards.Count - 1) Console.Write("   ");
+                }
+                Console.WriteLine();
+            }
+            Console.WriteLine();
         }
     }
 
