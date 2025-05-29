@@ -2,7 +2,8 @@
 {
     static void Main()
     {
-        PuzzleGenerator p = new PuzzleGenerator();
-        p.GenerateGame(4);
+        Console.WriteLine("initializing...\n");
+        DatabaseManager.InitializeDatabase();
+        PuzzleRefinery.InitiateSearch().Wait();
     }
 }

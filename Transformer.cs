@@ -90,7 +90,7 @@ class Transformer
 
     private static byte[] BitStringToBytes(string bitString)
     {
-        // 8의 배수로 패딩
+        // 4바이트로 패딩
         while (bitString.Length % 8 != 0)
             bitString += "0";
 
@@ -118,4 +118,5 @@ class Transformer
 
         return bitString.ToString();
     }
+
 }

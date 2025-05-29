@@ -157,36 +157,47 @@ public class PuzzleGenerator
     }
 
     // check unique solution
-    private (bool isUniqueSolution, List<Move> foundSolution) PuzzleSolver(Board inputBoard) // check uniqueness of inputBoard, get solution
+    public (bool isUniqueSolution, List<Move> foundSolution) PuzzleSolver(Board inputBoard) // check uniqueness of inputBoard, get solution
     {
         List<Move> foundSolution = new List<Move>(); // answer moveSet
         List<Move> moveSet = new List<Move>(); // multiverse board moveSet
+        Vector2Int endingPos = new Vector2Int(-1, -1); // unique ending
         bool killSwitch = false;
 
-        CheckBoardRecur(inputBoard, foundSolution, moveSet, ref killSwitch);
-        if (!killSwitch) // if after all multiverse killSwitch remained false,
+        CheckBoardRecur(inputBoard, foundSolution, moveSet, ref endingPos, ref killSwitch);
+        if (endingPos.x != -1 && !killSwitch || endingPos.x == -2) // if there is solution & after all multiverse killSwitch remained false,
         {
             BoardKey boardKey = GetBoardKey(inputBoard);
             validBoards.Add(boardKey); // update validBoards
+            return (true, foundSolution);
         }
-
-        return (!killSwitch, foundSolution);
+        else return (false, foundSolution);
     }
 
-    private void CheckBoardRecur(Board currentBoard, List<Move> solution, List<Move> moveSet, ref bool killSwitch)
+    private void CheckBoardRecur(Board currentBoard, List<Move> solution, List<Move> moveSet, ref Vector2Int endingPos, ref bool killSwitch)
     {
         BoardKey boardKey = GetBoardKey(currentBoard);
         if (validBoards.Contains(boardKey)) // memoization magic
-            return;
-
-        if (currentBoard.CountPieces() == 1) // if reached end,
         {
-            Piece lastPiece = currentBoard.GetLastPiece(); // need to check ending position
-
-            if (lastPiece.x != origin.x || lastPiece.y != origin.y) // if different ending, invalid, killSwitch on
-                killSwitch = true;
+            endingPos.x = -2;
             return;
         }
+
+        if (currentBoard.CountPieces() == 1) // if reached end,
+            {
+                Piece lastPiece = currentBoard.GetLastPiece(); // need to check ending position
+
+                if (endingPos.x == -1) // if first time reaching end,
+                {
+                    endingPos.x = lastPiece.x; // update endingPos
+                    endingPos.y = lastPiece.y;
+                    solution.AddRange(moveSet);
+                    return;
+                }
+                if (lastPiece.x != origin.x || lastPiece.y != origin.y) // if different ending, invalid, killSwitch on
+                    killSwitch = true;
+                return;
+            }
 
         List<Move> allValidMoves = currentBoard.GetAllValidMoves(); // GetAllValidMoves()
 
@@ -197,7 +208,7 @@ public class PuzzleGenerator
             Board newBoard = currentBoard.Clone(); // on cloned board
             newBoard.ExecuteMove(move); // executeMove()
             moveSet.Add(move); // update current moveSet
-            CheckBoardRecur(newBoard, solution, moveSet, ref killSwitch); // start next recursion
+            CheckBoardRecur(newBoard, solution, moveSet, ref endingPos, ref killSwitch); // start next recursion
             if (killSwitch) return; // if killSwitch, escape
             if (moveSet.Count > 0)
                 moveSet.RemoveAt(moveSet.Count - 1); // roll back needed for next move
@@ -395,7 +406,7 @@ public class PuzzleGenerator
 
     public void PrintBoard(Board inputBoard)
     {
-        Console.WriteLine("\n--- 현재 보드 ---\n");
+        Console.WriteLine("\n--- 보드 출력 ---\n");
 
         for (int y = inputBoard.Size - 1; y >= 0; y--)
         {
